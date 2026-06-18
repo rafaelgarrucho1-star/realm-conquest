@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // ============================================================
-// ⚔️ REALM CONQUEST — JOGO COMPLETO (single-player)
-// Aldeia isométrica · edifícios clicáveis com funções próprias
-// Recrutamento por edifício · Centro de Comando (tropas + envios)
+// ⚔️ REALM CONQUEST — V3 (estilo Tribal Wars)
+// Navegação no topo · página por edifício · muralha que cresce
+// Aldeia isométrica com prédios fincados no chão
 // ============================================================
 
-/* ---------------- PALETAS DE MATERIAL ---------------- */
+/* ---------- PALETAS ---------- */
 const STONE = { l: '#d2c9b8', d: '#a89d88', rl: '#9e2b25', rd: '#7a211c' };
 const KEEP = { l: '#c4bcab', d: '#968c79', rl: '#caa53a', rd: '#a07f20' };
 const TIMBER = { l: '#caa15f', d: '#9a7340', rl: '#7a4f2e', rd: '#5b381f' };
@@ -18,47 +18,24 @@ const WOODP = { l: '#bda36c', d: '#8f7a48', rl: '#4a7a30', rd: '#365c23' };
 const MARKETP = { l: '#caa15f', d: '#9a7340', rl: '#2f7d8c', rd: '#205c68' };
 const CHURCHP = { l: '#e4ded0', d: '#bdb5a1', rl: '#6b7d8c', rd: '#4d5b66' };
 
-/* ---------------- EDIFÍCIOS ---------------- */
+/* ---------- EDIFÍCIOS ---------- */
 const BUILDINGS = {
-  mainBuilding: { name: 'Edifício Principal', icon: '🏛️', cat: 'main', max: 30, w: 90, i: 80, h: 40, time: 25,
-    desc: 'Coração da aldeia. Cada nível reduz o tempo de todas as construções.',
-    viz: { cx: 500, cy: 285, s: 1.26, h: 72, roofH: 40, pal: STONE, banner: true } },
-  commandCenter: { name: 'Centro de Comando', icon: '🏰', cat: 'command', max: 1, w: 0, i: 0, h: 0, time: 1,
-    desc: 'Quartel-general. Veja todas as suas tropas, envie ataques e apoios por coordenadas.',
-    viz: { cx: 492, cy: 402, s: 0.78, h: 86, roofH: 16, pal: KEEP, flag: true, tower: true } },
-  church: { name: 'Igreja', icon: '⛪', cat: 'conquest', max: 1, w: 2000, i: 1500, h: 1000, time: 90,
-    desc: 'Treina sacerdotes, que reduzem a lealdade de aldeias inimigas para conquistá-las.',
-    viz: { cx: 690, cy: 224, s: 0.7, h: 54, roofH: 78, pal: CHURCHP, spire: true } },
-  woodcutter: { name: 'Serraria', icon: '🪵', cat: 'resource', res: 'wood', max: 30, w: 50, i: 30, h: 30, time: 16,
-    desc: 'Corta madeira da floresta.',
-    viz: { cx: 320, cy: 224, s: 0.82, h: 40, roofH: 22, pal: WOODP } },
-  mine: { name: 'Mina de Ferro', icon: '⛏️', cat: 'resource', res: 'iron', max: 30, w: 50, i: 30, h: 30, time: 16,
-    desc: 'Extrai ferro para tropas pesadas.',
-    viz: { cx: 500, cy: 196, s: 0.82, h: 36, roofH: 20, pal: DARK } },
-  smithy: { name: 'Ferreiro', icon: '🔧', cat: 'research', max: 20, w: 240, i: 200, h: 150, time: 55,
-    desc: 'Pesquisa novas tropas e melhorias de combate.',
-    viz: { cx: 232, cy: 314, s: 0.86, h: 48, roofH: 26, pal: SMITHP } },
-  market: { name: 'Mercado', icon: '🏪', cat: 'market', max: 20, w: 100, i: 50, h: 50, time: 22,
-    desc: 'Troca recursos. Cada nível libera mais comerciantes.',
-    viz: { cx: 768, cy: 318, s: 0.9, h: 42, roofH: 24, pal: MARKETP } },
-  barracks: { name: 'Quartel', icon: '🎖️', cat: 'infantry', max: 25, w: 100, i: 50, h: 50, time: 22,
-    desc: 'Treina a infantaria.', trains: ['spearman', 'swordsman', 'archer', 'barbarian'],
-    viz: { cx: 352, cy: 396, s: 0.96, h: 46, roofH: 26, pal: TIMBER } },
-  stable: { name: 'Estábulo', icon: '🐴', cat: 'cavalry', max: 20, w: 150, i: 100, h: 100, time: 34,
-    desc: 'Cria cavalaria e espiões.', trains: ['spy', 'cavalry', 'archerCav', 'royalCav'],
-    viz: { cx: 648, cy: 396, s: 0.96, h: 44, roofH: 24, pal: TIMBER2 } },
-  warehouse: { name: 'Armazém', icon: '🏠', cat: 'storage', max: 30, w: 50, i: 30, h: 30, time: 16,
-    desc: 'Guarda seus recursos.',
-    viz: { cx: 286, cy: 484, s: 1.06, h: 40, roofH: 22, pal: THATCH } },
-  farm: { name: 'Fazenda', icon: '🌾', cat: 'resource', res: 'wheat', max: 30, w: 50, i: 30, h: 30, time: 16,
-    desc: 'Produz trigo e sustenta a população.',
-    viz: { cx: 512, cy: 500, s: 1.0, h: 38, roofH: 22, pal: THATCH } },
-  workshop: { name: 'Oficina', icon: '🔨', cat: 'siege', max: 20, w: 200, i: 150, h: 100, time: 46,
-    desc: 'Constrói máquinas de cerco.', trains: ['ram', 'catapult'],
-    viz: { cx: 712, cy: 484, s: 1.0, h: 46, roofH: 24, pal: TIMBER } }
+  mainBuilding: { name: 'Edifício Principal', icon: '🏛️', cat: 'main', max: 30, w: 90, i: 80, h: 40, time: 25, desc: 'Coração da aldeia. Cada nível reduz o tempo de todas as construções.', viz: { cx: 500, cy: 286, s: 1.26, h: 72, roofH: 40, pal: STONE, banner: true } },
+  commandCenter: { name: 'Centro de Comando', icon: '🏰', cat: 'command', max: 1, w: 0, i: 0, h: 0, time: 1, desc: 'Quartel-general. Veja todas as suas tropas e envie ataques e apoios por coordenadas.', viz: { cx: 492, cy: 402, s: 0.8, h: 88, roofH: 14, pal: KEEP, flag: true, tower: true } },
+  church: { name: 'Igreja', icon: '⛪', cat: 'conquest', max: 1, w: 2000, i: 1500, h: 1000, time: 90, desc: 'Treina sacerdotes, que reduzem a lealdade de aldeias inimigas para conquistá-las.', viz: { cx: 690, cy: 226, s: 0.7, h: 54, roofH: 78, pal: CHURCHP, spire: true } },
+  woodcutter: { name: 'Serraria', icon: '🪵', cat: 'resource', res: 'wood', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Corta madeira da floresta.', viz: { cx: 322, cy: 226, s: 0.82, h: 40, roofH: 22, pal: WOODP } },
+  mine: { name: 'Mina de Ferro', icon: '⛏️', cat: 'resource', res: 'iron', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Extrai ferro para tropas pesadas.', viz: { cx: 500, cy: 198, s: 0.82, h: 36, roofH: 20, pal: DARK } },
+  smithy: { name: 'Ferreiro', icon: '🔧', cat: 'research', max: 20, w: 240, i: 200, h: 150, time: 55, desc: 'Pesquisa novas tropas e melhorias de combate.', viz: { cx: 234, cy: 316, s: 0.86, h: 48, roofH: 26, pal: SMITHP } },
+  market: { name: 'Mercado', icon: '🏪', cat: 'market', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Troca recursos. Cada nível libera mais comerciantes.', viz: { cx: 768, cy: 320, s: 0.9, h: 42, roofH: 24, pal: MARKETP } },
+  barracks: { name: 'Quartel', icon: '🎖️', cat: 'infantry', max: 25, w: 100, i: 50, h: 50, time: 22, desc: 'Treina a infantaria.', trains: ['spearman', 'swordsman', 'archer', 'barbarian'], viz: { cx: 352, cy: 398, s: 0.96, h: 46, roofH: 26, pal: TIMBER } },
+  stable: { name: 'Estábulo', icon: '🐴', cat: 'cavalry', max: 20, w: 150, i: 100, h: 100, time: 34, desc: 'Cria cavalaria e espiões.', trains: ['spy', 'cavalry', 'archerCav', 'royalCav'], viz: { cx: 648, cy: 398, s: 0.96, h: 44, roofH: 24, pal: TIMBER2 } },
+  warehouse: { name: 'Armazém', icon: '🏠', cat: 'storage', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Guarda seus recursos.', viz: { cx: 288, cy: 486, s: 1.06, h: 40, roofH: 22, pal: THATCH } },
+  farm: { name: 'Fazenda', icon: '🌾', cat: 'resource', res: 'wheat', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Produz trigo e sustenta a população.', viz: { cx: 512, cy: 502, s: 1.0, h: 38, roofH: 22, pal: THATCH } },
+  workshop: { name: 'Oficina', icon: '🔨', cat: 'siege', max: 20, w: 200, i: 150, h: 100, time: 46, desc: 'Constrói máquinas de cerco.', trains: ['ram', 'catapult'], viz: { cx: 712, cy: 486, s: 1.0, h: 46, roofH: 24, pal: TIMBER } },
+  wall: { name: 'Muralha', icon: '🧱', cat: 'wall', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Protege a aldeia. Cada nível dá +5% de defesa e ergue a muralha em volta.', viz: { wall: true } }
 };
 
-/* ---------------- TROPAS ---------------- */
+/* ---------- TROPAS ---------- */
 const TROOPS = {
   spearman: { name: 'Lanceiro', icon: '🔱', build: 'barracks', atk: 8, def: 12, speed: 6, pop: 1, carry: 25, w: 0, i: 5, h: 55, time: 6, req: null, desc: 'Domina cavalaria' },
   swordsman: { name: 'Espadachim', icon: '🗡️', build: 'barracks', atk: 10, def: 8, speed: 6, pop: 1, carry: 25, w: 0, i: 0, h: 50, time: 7, req: null, desc: 'Versátil e barato' },
@@ -72,7 +49,6 @@ const TROOPS = {
   catapult: { name: 'Catapulta', icon: '💣', build: 'workshop', atk: 80, def: 2, speed: 4, pop: 5, carry: 0, w: 100, i: 100, h: 400, time: 30, req: { smithy: 18 }, desc: 'Destrói edifícios' },
   priest: { name: 'Sacerdote', icon: '✝️', build: 'church', atk: 0, def: 5, speed: 6, pop: 20, carry: 0, w: 5000, i: 5000, h: 5000, time: 60, req: null, desc: 'Reduz lealdade (conquista)' }
 };
-
 const BONUS = {
   steel: { name: 'Aço Temperado', icon: '⚔️', cost: 6000, smithy: 7, effect: '+5% ataque infantaria', tgt: ['spearman', 'swordsman', 'barbarian'] },
   longbow: { name: 'Arco Longo', icon: '🏹', cost: 5000, smithy: 6, effect: '+5% ataque arqueiros', tgt: ['archer', 'archerCav'] },
@@ -80,218 +56,192 @@ const BONUS = {
   siege: { name: 'Engenharia de Cerco', icon: '💥', cost: 9000, smithy: 12, effect: '+10% cerco', tgt: ['ram', 'catapult'] }
 };
 
-/* ---------------- FÓRMULAS ---------------- */
+/* ---------- FÓRMULAS ---------- */
 const cost = (b, lvl) => { const m = Math.pow(1.26, Math.max(0, lvl - 1)); return { w: Math.floor(b.w * m), i: Math.floor(b.i * m), h: Math.floor(b.h * m) }; };
 const buildTime = (b, lvl, mainLvl) => { const base = b.time + Math.max(0, lvl - 1) * b.time * 0.22; const red = Math.min(0.5, Math.max(0, (mainLvl - 1) * 0.02)); return Math.max(2, Math.floor(base * (1 - red))); };
-const recruitTime = (t, buildLvl) => Math.max(2, Math.floor(t.time * (1 - Math.min(0.5, (buildLvl - 1) * 0.02))));
+const recruitTime = (t, bl) => Math.max(2, Math.floor(t.time * (1 - Math.min(0.5, (bl - 1) * 0.02))));
 const production = (lvl) => 50 + Math.max(0, lvl - 1) * 145;
 const warehouseCap = (lvl) => Math.floor(1500 * Math.pow(1.22, Math.max(0, lvl - 1)));
 const maxPop = (lvl) => Math.min(30000, 240 + Math.max(0, lvl - 1) * 260);
 const fmt = (n) => Math.floor(n).toLocaleString('pt-BR');
 const fmtTime = (s) => s < 60 ? `${Math.ceil(s)}s` : s < 3600 ? `${Math.floor(s / 60)}m${String(Math.floor(s % 60)).padStart(2, '0')}` : `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
 const dist = (a, b) => Math.round(Math.hypot(a.x - b.x, a.y - b.y) * 10) / 10;
-
 const HOME = { x: 500, y: 350 };
 
 const startState = () => ({
   resources: { wood: 4000, iron: 3000, wheat: 4000 },
-  levels: { mainBuilding: 3, commandCenter: 1, woodcutter: 5, mine: 5, farm: 5, warehouse: 5, smithy: 1, market: 0, barracks: 3, stable: 1, workshop: 0, church: 0 },
+  levels: { mainBuilding: 3, commandCenter: 1, woodcutter: 5, mine: 5, farm: 5, warehouse: 5, smithy: 1, market: 0, barracks: 3, stable: 1, workshop: 0, church: 0, wall: 2 },
   troops: { spearman: 40, swordsman: 30, archer: 0, barbarian: 0, spy: 0, cavalry: 0, archerCav: 0, royalCav: 0, ram: 0, catapult: 0, priest: 0 },
-  research: {}, bonus: {}, wall: 2,
-  buildQueue: [],
-  recruit: { barracks: [], stable: [], workshop: [], church: [] },
-  movements: [],
-  reports: [],
-  conquered: 0
+  research: {}, bonus: {},
+  buildQueue: [], recruit: { barracks: [], stable: [], workshop: [], church: [] },
+  movements: [], reports: [], conquered: 0
 });
-
 const genTargets = () => {
   const names = ['Forte Negro', 'Vale Sombrio', 'Pico Gelado', 'Campo Rubro', 'Ermo Cinza', 'Bastião', 'Posto Caído', 'Ruína Velha'];
   return names.map((n, i) => {
-    const diff = i < 4 ? 'fraco' : i < 7 ? 'médio' : 'forte';
-    const m = diff === 'fraco' ? 1 : diff === 'médio' ? 3 : 7;
-    const ang = (i / names.length) * Math.PI * 2;
-    const r = 8 + (i % 4) * 4;
-    return {
-      id: i + 1, name: n, owner: 'Bárbaros', diff,
-      x: Math.round(HOME.x + Math.cos(ang) * r), y: Math.round(HOME.y + Math.sin(ang) * r),
-      loyalty: 100, conquered: false,
+    const diff = i < 4 ? 'fraco' : i < 7 ? 'médio' : 'forte'; const m = diff === 'fraco' ? 1 : diff === 'médio' ? 3 : 7;
+    const ang = (i / names.length) * Math.PI * 2, r = 8 + (i % 4) * 4;
+    return { id: i + 1, name: n, owner: 'Bárbaros', diff, x: Math.round(HOME.x + Math.cos(ang) * r), y: Math.round(HOME.y + Math.sin(ang) * r), loyalty: 100, conquered: false,
       troops: { spearman: Math.floor((12 + Math.random() * 14) * m), swordsman: Math.floor((8 + Math.random() * 10) * m), archer: Math.floor((6 + Math.random() * 8) * m) },
       wall: Math.min(20, Math.round(m * 1.5)),
-      resources: { wood: Math.floor((1500 + Math.random() * 3000) * m), iron: Math.floor((800 + Math.random() * 1500) * m), wheat: Math.floor((1500 + Math.random() * 3000) * m) }
-    };
+      resources: { wood: Math.floor((1500 + Math.random() * 3000) * m), iron: Math.floor((800 + Math.random() * 1500) * m), wheat: Math.floor((1500 + Math.random() * 3000) * m) } };
   });
 };
 
-/* ---------------- EDIFÍCIO ISOMÉTRICO (SVG) ---------------- */
+/* ---------- DESENHO ISOMÉTRICO ---------- */
 function pts(a) { return a.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' '); }
 function IsoBuilding({ id, cfg, level, hovered, selected, building, progress, onHover, onClick }) {
   const v = cfg.viz, s = v.s, w2 = 56 * s, h2 = w2 / 2;
   const grow = 1 + Math.min(0.4, level * 0.022);
   const H = v.h * s * grow, roofH = v.roofH * s, cx = v.cx, cy = v.cy, pal = v.pal;
-  const dim = level === 0 ? 0.42 : 1;
-  const B = [cx, cy + h2], R = [cx + w2, cy], L = [cx - w2, cy];
+  const dim = level === 0 ? 0.5 : 1;
+  // terreno (plot) que fixa o prédio no chão
+  const fp = w2 * 1.32, fh = fp / 2, plotH = 5;
+  const pT = [cx, cy - fh], pR = [cx + fp, cy], pB = [cx, cy + fh], pL = [cx - fp, cy];
+  // cantos do prédio
+  const B = [cx, cy + h2], R = [cx + w2, cy], Lp = [cx - w2, cy];
   const Bt = [cx, cy + h2 - H], Rt = [cx + w2, cy - H], Lt = [cx - w2, cy - H], Tt = [cx, cy - h2 - H];
   const apex = [cx, cy - H - roofH];
   const glow = hovered || selected;
   const labelY = cy - H - roofH - (v.banner || v.flag ? 40 : v.spire ? 30 : 18);
   return (
-    <g style={{ cursor: 'pointer', opacity: dim, transition: 'opacity .3s' }}
-      onClick={(e) => { e.stopPropagation(); onClick(id); }}
-      onMouseEnter={() => onHover(id)} onMouseLeave={() => onHover(null)}
-      filter={glow ? 'url(#glow)' : 'url(#soft)'}>
-      <ellipse cx={cx} cy={cy + h2 + 3} rx={w2 * 1.05} ry={h2 * 0.7} fill="rgba(0,0,0,0.22)" />
-      <polygon points={pts([B, L, Lt, Bt])} fill={pal.d} />
+    <g style={{ cursor: 'pointer', opacity: dim }} onClick={(e) => { e.stopPropagation(); onClick(id); }} onMouseEnter={() => onHover(id)} onMouseLeave={() => onHover(null)}>
+      {/* sombra de contato (colada no chão) */}
+      <ellipse cx={cx} cy={cy + fh * 0.55} rx={fp * 0.95} ry={fh * 0.62} fill="rgba(0,0,0,0.20)" />
+      {/* terreno de terra */}
+      <polygon points={pts([[pB[0], pB[1] + plotH], [pL[0], pL[1] + plotH], pL, pB])} fill="#6b5230" />
+      <polygon points={pts([[pR[0], pR[1] + plotH], [pB[0], pB[1] + plotH], pB, pR])} fill="#7d6038" />
+      <polygon points={pts([pT, pR, pB, pL])} fill="#8a6a3c" />
+      <polygon points={pts([pT, pR, pB, pL])} fill="none" stroke="#5a4326" strokeWidth="1" />
+      {glow && <polygon points={pts([pT, pR, pB, pL])} fill="none" stroke="#f0d98a" strokeWidth="2.5" />}
+      {/* paredes */}
+      <polygon points={pts([B, Lp, Lt, Bt])} fill={pal.d} />
       <polygon points={pts([R, B, Bt, Rt])} fill={pal.l} />
       {!v.spire && <polygon points={pts([[cx + w2 * 0.34, cy + h2 * 0.5], [cx + w2 * 0.04, cy + h2 * 0.82], [cx + w2 * 0.04, cy + h2 * 0.82 - H * 0.42], [cx + w2 * 0.34, cy + h2 * 0.5 - H * 0.42]])} fill="rgba(40,26,14,0.5)" />}
-      {/* ameias para a torre (centro de comando) */}
-      {v.tower && [-0.6, -0.2, 0.2, 0.6].map((o, k) => (
-        <rect key={k} x={cx + o * w2 - 3} y={cy - H - 8} width={6} height={9} fill={pal.d} />
-      ))}
+      {v.tower && [-0.6, -0.2, 0.2, 0.6].map((o, k) => <rect key={k} x={cx + o * w2 - 3} y={cy - H - 8} width={6} height={9} fill={pal.d} />)}
+      {/* telhado */}
       {v.spire ? (<>
         <polygon points={pts([Rt, Bt, apex])} fill={pal.rl} /><polygon points={pts([Bt, Lt, apex])} fill={pal.rd} />
         <polygon points={pts([Lt, Tt, apex])} fill={pal.rd} /><polygon points={pts([Tt, Rt, apex])} fill={pal.rl} />
-        <line x1={apex[0]} y1={apex[1]} x2={apex[0]} y2={apex[1] - 16} stroke="#caa53a" strokeWidth={3} />
-        <line x1={apex[0] - 6} y1={apex[1] - 11} x2={apex[0] + 6} y2={apex[1] - 11} stroke="#caa53a" strokeWidth={3} />
-      </>) : v.tower ? (
-        <polygon points={pts([[cx - w2, cy - H], [cx + w2, cy - H], [cx, cy - h2 - H]])} fill="none" />
-      ) : (<>
+        <line x1={apex[0]} y1={apex[1]} x2={apex[0]} y2={apex[1] - 16} stroke="#caa53a" strokeWidth={3} /><line x1={apex[0] - 6} y1={apex[1] - 11} x2={apex[0] + 6} y2={apex[1] - 11} stroke="#caa53a" strokeWidth={3} />
+      </>) : v.tower ? null : (<>
         <polygon points={pts([Tt, Rt, apex])} fill={pal.rd} /><polygon points={pts([Lt, Tt, apex])} fill={pal.rd} />
         <polygon points={pts([Rt, Bt, apex])} fill={pal.rl} /><polygon points={pts([Bt, Lt, apex])} fill={pal.rl} />
       </>)}
-      {v.banner && (<><line x1={apex[0]} y1={apex[1]} x2={apex[0]} y2={apex[1] - 30} stroke="#5a4326" strokeWidth={2.5} />
-        <polygon points={`${apex[0]},${apex[1] - 30} ${apex[0] + 22},${apex[1] - 25} ${apex[0]},${apex[1] - 18}`} fill="#9e2b25" /></>)}
-      {v.flag && (<><line x1={cx} y1={cy - H - 4} x2={cx} y2={cy - H - 34} stroke="#5a4326" strokeWidth={2.5} />
-        <polygon points={`${cx},${cy - H - 34} ${cx + 20},${cy - H - 29} ${cx},${cy - H - 22}`} fill="#caa53a" /></>)}
-      {building && (<g>
-        <polygon points={pts([R, B, Bt, Rt])} fill="rgba(202,160,90,0.18)" />
-        <line x1={R[0]} y1={R[1]} x2={Rt[0]} y2={Rt[1]} stroke="#caa15f" strokeWidth={2} />
-        <line x1={B[0]} y1={B[1]} x2={Bt[0]} y2={Bt[1]} stroke="#caa15f" strokeWidth={2} /></g>)}
+      {v.banner && (<><line x1={apex[0]} y1={apex[1]} x2={apex[0]} y2={apex[1] - 30} stroke="#5a4326" strokeWidth={2.5} /><polygon points={`${apex[0]},${apex[1] - 30} ${apex[0] + 22},${apex[1] - 25} ${apex[0]},${apex[1] - 18}`} fill="#9e2b25" /></>)}
+      {v.flag && (<><line x1={cx} y1={cy - H - 4} x2={cx} y2={cy - H - 34} stroke="#5a4326" strokeWidth={2.5} /><polygon points={`${cx},${cy - H - 34} ${cx + 20},${cy - H - 29} ${cx},${cy - H - 22}`} fill="#caa53a" /></>)}
+      {building && (<g><polygon points={pts([R, B, Bt, Rt])} fill="rgba(202,160,90,0.18)" /><line x1={R[0]} y1={R[1]} x2={Rt[0]} y2={Rt[1]} stroke="#caa15f" strokeWidth={2} /><line x1={B[0]} y1={B[1]} x2={Bt[0]} y2={Bt[1]} stroke="#caa15f" strokeWidth={2} /></g>)}
       <g transform={`translate(${cx}, ${labelY})`}>
-        {building ? (<>
-          <rect x={-26} y={-13} width={52} height={20} rx={10} fill="rgba(20,14,8,0.9)" stroke="#caa15f" />
-          <text x={0} y={2} textAnchor="middle" fontSize={11} fill="#f0d98a" fontWeight="bold">🔨 {Math.floor(progress)}%</text>
-        </>) : level > 0 ? (<>
-          <circle r={13} fill="rgba(20,14,8,0.92)" stroke={glow ? '#f0d98a' : '#caa15f'} strokeWidth={glow ? 2 : 1.2} />
-          <text x={0} y={4} textAnchor="middle" fontSize={13} fill="#f0d98a" fontWeight="bold">{level}</text>
-        </>) : (<>
-          <circle r={11} fill="rgba(20,14,8,0.55)" stroke="#6b5d3f" strokeDasharray="2 2" />
-          <text x={0} y={3} textAnchor="middle" fontSize={11} fill="#9a8a5f">+</text>
-        </>)}
+        {building ? (<><rect x={-26} y={-13} width={52} height={20} rx={10} fill="rgba(20,14,8,0.9)" stroke="#caa15f" /><text x={0} y={2} textAnchor="middle" fontSize={11} fill="#f0d98a" fontWeight="bold">🔨 {Math.floor(progress)}%</text></>)
+          : level > 0 ? (<><circle r={13} fill="rgba(20,14,8,0.92)" stroke={glow ? '#f0d98a' : '#caa15f'} strokeWidth={glow ? 2 : 1.2} /><text x={0} y={4} textAnchor="middle" fontSize={13} fill="#f0d98a" fontWeight="bold">{level}</text></>)
+            : (<><circle r={11} fill="rgba(20,14,8,0.55)" stroke="#6b5d3f" strokeDasharray="2 2" /><text x={0} y={3} textAnchor="middle" fontSize={11} fill="#9a8a5f">+</text></>)}
       </g>
     </g>
   );
 }
-function Tree({ x, y, s = 1 }) { return (<g filter="url(#soft)"><ellipse cx={x} cy={y + 2} rx={13 * s} ry={6 * s} fill="rgba(0,0,0,0.18)" /><rect x={x - 2 * s} y={y - 14 * s} width={4 * s} height={16 * s} fill="#6b4a2b" rx={1} /><circle cx={x} cy={y - 22 * s} r={13 * s} fill="#4f7d33" /><circle cx={x - 7 * s} cy={y - 16 * s} r={9 * s} fill="#46712c" /><circle cx={x + 7 * s} cy={y - 17 * s} r={9 * s} fill="#588a3a" /></g>); }
-function Rock({ x, y, s = 1 }) { return (<g filter="url(#soft)"><ellipse cx={x} cy={y + 1} rx={11 * s} ry={5 * s} fill="rgba(0,0,0,0.16)" /><polygon points={`${x - 10 * s},${y} ${x - 3 * s},${y - 9 * s} ${x + 6 * s},${y - 7 * s} ${x + 10 * s},${y}`} fill="#9aa0a6" /></g>); }
+function Tree({ x, y, s = 1 }) { return (<g><ellipse cx={x} cy={y + 2} rx={13 * s} ry={6 * s} fill="rgba(0,0,0,0.18)" /><rect x={x - 2 * s} y={y - 14 * s} width={4 * s} height={16 * s} fill="#6b4a2b" rx={1} /><circle cx={x} cy={y - 22 * s} r={13 * s} fill="#4f7d33" /><circle cx={x - 7 * s} cy={y - 16 * s} r={9 * s} fill="#46712c" /><circle cx={x + 7 * s} cy={y - 17 * s} r={9 * s} fill="#588a3a" /></g>); }
+function Rock({ x, y, s = 1 }) { return (<g><ellipse cx={x} cy={y + 1} rx={11 * s} ry={5 * s} fill="rgba(0,0,0,0.16)" /><polygon points={`${x - 10 * s},${y} ${x - 3 * s},${y - 9 * s} ${x + 6 * s},${y - 7 * s} ${x + 10 * s},${y}`} fill="#9aa0a6" /></g>); }
+
+/* ---------- MURALHA (anel que cresce) ---------- */
+function WallRing({ level, onGate, hovered }) {
+  if (level <= 0) return null;
+  const cx = 500, cy = 348, rx = 430, ry = 224;
+  const thick = 5 + level * 0.7;
+  const depth = 3 + level * 0.45;
+  const towers = level >= 8;
+  const tw = []; if (towers) { [[-0.7, -0.7], [0.7, -0.7], [-0.78, 0.5], [0.78, 0.5]].forEach(([dx, dy], k) => { const tx = cx + dx * rx, ty = cy + dy * ry; tw.push(<g key={k}><ellipse cx={tx} cy={ty + 2} rx={10} ry={5} fill="rgba(0,0,0,.2)" /><rect x={tx - 8} y={ty - 18 - level * 0.4} width={16} height={20 + level * 0.4} rx={2} fill="#b6ab98" stroke="#8a7f6c" /><polygon points={`${tx - 9},${ty - 18 - level * 0.4} ${tx + 9},${ty - 18 - level * 0.4} ${tx},${ty - 30 - level * 0.4}`} fill="#7c211c" /></g>); }); }
+  return (
+    <g>
+      {/* profundidade (face frontal da muralha) */}
+      <ellipse cx={cx} cy={cy + depth} rx={rx} ry={ry} fill="none" stroke="#6f6655" strokeWidth={thick} />
+      {/* corpo da muralha */}
+      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="none" stroke="#9a9080" strokeWidth={thick} />
+      {/* ameias (tracejado por cima) */}
+      <ellipse cx={cx} cy={cy - thick * 0.35} rx={rx} ry={ry} fill="none" stroke="#c4bcab" strokeWidth={thick * 0.5} strokeDasharray="6 7" />
+      {tw}
+      {/* portão clicável na frente */}
+      <g style={{ cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); onGate(); }}>
+        <rect x={cx - 26} y={cy + ry - 16} width={52} height={30} rx={2} fill={hovered ? '#b8aa8e' : '#a89d88'} stroke="#6f6655" strokeWidth="2" />
+        <path d={`M ${cx - 12} ${cy + ry + 14} L ${cx - 12} ${cy + ry - 2} Q ${cx} ${cy + ry - 14} ${cx + 12} ${cy + ry - 2} L ${cx + 12} ${cy + ry + 14} Z`} fill="#3a2c1b" />
+        <rect x={cx - 24} y={cy + ry - 22} width={9} height={10} fill="#b6ab98" stroke="#6f6655" /><rect x={cx + 15} y={cy + ry - 22} width={9} height={10} fill="#b6ab98" stroke="#6f6655" />
+      </g>
+    </g>
+  );
+}
 
 /* ================= APP ================= */
 export default function RealmConquest() {
-  const [g, setG] = useState(() => { try { const s = localStorage.getItem('rcFullSave'); return s ? JSON.parse(s) : startState(); } catch { return startState(); } });
-  const [targets, setTargets] = useState(() => { try { const s = localStorage.getItem('rcFullTargets'); return s ? JSON.parse(s) : genTargets(); } catch { return genTargets(); } });
+  const [g, setG] = useState(() => { try { const s = localStorage.getItem('rcV3'); return s ? JSON.parse(s) : startState(); } catch { return startState(); } });
+  const [targets, setTargets] = useState(() => { try { const s = localStorage.getItem('rcV3t'); return s ? JSON.parse(s) : genTargets(); } catch { return genTargets(); } });
+  const [screen, setScreen] = useState('village');   // village | mapa | recrutar | command | reports | ranking | tribo | amigos | perfil | <buildingId>
   const [hovered, setHovered] = useState(null);
-  const [open, setOpen] = useState(null);       // edifício aberto
   const [toast, setToast] = useState('');
-  const [report, setReport] = useState(null);   // relatório de combate em foco
+  const [report, setReport] = useState(null);
   const tick = useRef(Date.now());
 
   const L = g.levels;
   const whCap = warehouseCap(L.warehouse);
   const popMax = maxPop(L.farm);
   const buildingsPop = Object.entries(L).reduce((s, [k, l]) => s + (l > 0 ? 4 : 0), 0);
-  const homeTroopsPop = Object.entries(g.troops).reduce((s, [k, c]) => s + c * TROOPS[k].pop, 0);
+  const homePop = Object.entries(g.troops).reduce((s, [k, c]) => s + c * TROOPS[k].pop, 0);
   const awayPop = g.movements.reduce((s, m) => s + Object.entries(m.troops).reduce((a, [k, c]) => a + c * TROOPS[k].pop, 0), 0);
   const queuePop = Object.values(g.recruit).flat().reduce((s, it) => s + it.remaining * TROOPS[it.key].pop, 0);
-  const popUsed = buildingsPop + homeTroopsPop + awayPop + queuePop;
+  const popUsed = buildingsPop + homePop + awayPop + queuePop;
   const rates = { wood: production(L.woodcutter), iron: production(L.mine), wheat: production(L.farm) };
 
-  useEffect(() => { const t = setTimeout(() => { try { localStorage.setItem('rcFullSave', JSON.stringify(g)); localStorage.setItem('rcFullTargets', JSON.stringify(targets)); } catch {} }, 600); return () => clearTimeout(t); }, [g, targets]);
-
+  useEffect(() => { const t = setTimeout(() => { try { localStorage.setItem('rcV3', JSON.stringify(g)); localStorage.setItem('rcV3t', JSON.stringify(targets)); } catch {} }, 600); return () => clearTimeout(t); }, [g, targets]);
   const flash = useCallback((m) => { setToast(m); setTimeout(() => setToast(''), 3200); }, []);
 
-  /* ----- LOOP PRINCIPAL ----- */
   useEffect(() => {
     const iv = setInterval(() => {
       const now = Date.now(), dt = (now - tick.current) / 1000; tick.current = now;
       setG(prev => {
         let st = { ...prev, resources: { ...prev.resources } };
-        // produção
         st.resources.wood = Math.min(whCap, st.resources.wood + rates.wood / 3600 * dt);
         st.resources.iron = Math.min(whCap, st.resources.iron + rates.iron / 3600 * dt);
         st.resources.wheat = Math.min(whCap, st.resources.wheat + rates.wheat / 3600 * dt);
-        // fila de construção
-        if (st.buildQueue.length) {
-          const q = [...st.buildQueue]; q[0] = { ...q[0], left: q[0].left - dt };
-          if (q[0].left <= 0) { st.levels = { ...st.levels, [q[0].key]: q[0].level }; flash(`✅ ${BUILDINGS[q[0].key].name} nível ${q[0].level}!`); q.shift(); }
-          st.buildQueue = q;
-        }
-        // filas de recrutamento (por edifício)
-        const rec = { ...st.recruit }; let troopsChanged = false; const nt = { ...st.troops };
-        ['barracks', 'stable', 'workshop', 'church'].forEach(bk => {
-          if (rec[bk] && rec[bk].length) {
-            const q = [...rec[bk]]; q[0] = { ...q[0], left: q[0].left - dt };
-            if (q[0].left <= 0) { nt[q[0].key] += 1; troopsChanged = true; if (q[0].remaining > 1) q[0] = { ...q[0], remaining: q[0].remaining - 1, left: q[0].unitTime }; else q.shift(); }
-            rec[bk] = q;
-          }
-        });
-        st.recruit = rec; if (troopsChanged) st.troops = nt;
-        // movimentos de tropas
+        if (st.buildQueue.length) { const q = [...st.buildQueue]; q[0] = { ...q[0], left: q[0].left - dt }; if (q[0].left <= 0) { st.levels = { ...st.levels, [q[0].key]: q[0].level }; flash(`✅ ${BUILDINGS[q[0].key].name} nível ${q[0].level}!`); q.shift(); } st.buildQueue = q; }
+        const rec = { ...st.recruit }; let tc = false; const nt = { ...st.troops };
+        ['barracks', 'stable', 'workshop', 'church'].forEach(bk => { if (rec[bk] && rec[bk].length) { const q = [...rec[bk]]; q[0] = { ...q[0], left: q[0].left - dt }; if (q[0].left <= 0) { nt[q[0].key] += 1; tc = true; if (q[0].remaining > 1) q[0] = { ...q[0], remaining: q[0].remaining - 1, left: q[0].unitTime }; else q.shift(); } rec[bk] = q; } });
+        st.recruit = rec; if (tc) st.troops = nt;
         if (st.movements.length) {
-          const remaining = []; let resGain = { w: 0, i: 0, h: 0 }; const back = { ...st.troops };
+          const rem = []; let gain = { w: 0, i: 0, h: 0 }; const back = { ...st.troops };
           st.movements.forEach(m => {
-            if (m.phase === 'stationed') { remaining.push(m); return; }
-            const left = m.left - dt;
-            if (left > 0) { remaining.push({ ...m, left }); return; }
-            if (m.phase === 'out' && m.mode === 'attack') {
-              const res = resolveCombat(m, targets, setTargets, flash);
-              if (res.survivors && Object.values(res.survivors).some(v => v > 0)) remaining.push({ ...m, phase: 'back', troops: res.survivors, loot: res.loot, left: m.total, total: m.total });
-              else { /* todos mortos */ }
-              st.reports = [{ id: Date.now() + Math.random(), ...res.report }, ...st.reports].slice(0, 20);
-            } else if (m.phase === 'out' && m.mode === 'support') {
-              remaining.push({ ...m, phase: 'stationed', left: 0 });
-            } else if (m.phase === 'back') {
-              Object.entries(m.troops).forEach(([k, c]) => { back[k] = (back[k] || 0) + c; });
-              if (m.loot) { resGain.w += m.loot.w; resGain.i += m.loot.i; resGain.h += m.loot.h; }
-              flash(`🏠 Tropas voltaram de ${m.target.name}.`);
-            }
+            if (m.phase === 'stationed') { rem.push(m); return; }
+            const left = m.left - dt; if (left > 0) { rem.push({ ...m, left }); return; }
+            if (m.phase === 'out' && m.mode === 'attack') { const res = resolveCombat(m, targets, setTargets, flash); if (res.survivors && Object.values(res.survivors).some(v => v > 0)) rem.push({ ...m, phase: 'back', troops: res.survivors, loot: res.loot, left: m.total, total: m.total }); st.reports = [{ id: Date.now() + Math.random(), ...res.report }, ...st.reports].slice(0, 20); }
+            else if (m.phase === 'out' && m.mode === 'support') rem.push({ ...m, phase: 'stationed', left: 0 });
+            else if (m.phase === 'back') { Object.entries(m.troops).forEach(([k, c]) => back[k] = (back[k] || 0) + c); if (m.loot) { gain.w += m.loot.w; gain.i += m.loot.i; gain.h += m.loot.h; } flash(`🏠 Tropas voltaram de ${m.target.name}.`); }
           });
-          st.movements = remaining; st.troops = back;
-          st.resources.wood = Math.min(whCap, st.resources.wood + resGain.w);
-          st.resources.iron = Math.min(whCap, st.resources.iron + resGain.i);
-          st.resources.wheat = Math.min(whCap, st.resources.wheat + resGain.h);
+          st.movements = rem; st.troops = back;
+          st.resources.wood = Math.min(whCap, st.resources.wood + gain.w); st.resources.iron = Math.min(whCap, st.resources.iron + gain.i); st.resources.wheat = Math.min(whCap, st.resources.wheat + gain.h);
         }
         return st;
       });
-      // recupera lealdade dos alvos
       setTargets(ts => ts.map(t => t.loyalty < 100 && !t.conquered ? { ...t, loyalty: Math.min(100, t.loyalty + 2 / 3600 * dt) } : t));
     }, 100);
     return () => clearInterval(iv);
   }, [whCap, rates.wood, rates.iron, rates.wheat, targets, flash]);
 
-  /* ----- COMBATE ----- */
   function resolveCombat(m, ts, setTs, flashFn) {
     const enemy = ts.find(t => t.id === m.target.id);
-    if (!enemy) return { survivors: m.troops, loot: { w: 0, i: 0, h: 0 }, report: { name: m.target.name, win: true, text: 'Alvo não existe mais.' } };
-    const rams = m.troops.ram || 0; const effWall = Math.max(0, enemy.wall - rams); const wallB = 1 + effWall * 0.05;
+    if (!enemy) return { survivors: m.troops, loot: { w: 0, i: 0, h: 0 }, report: { name: m.target.name, win: true, text: 'Alvo sumiu.' } };
+    const rams = m.troops.ram || 0, effWall = Math.max(0, enemy.wall - rams), wallB = 1 + effWall * 0.05;
     let atk = 0; Object.entries(m.troops).forEach(([k, c]) => { if (TROOPS[k].atk > 0) atk += TROOPS[k].atk * c * bonusMult(k); });
     let def = 0; Object.entries(enemy.troops).forEach(([k, c]) => { def += (TROOPS[k]?.def || 0) * c * wallB; });
-    const win = atk > def;
-    const survivors = {}; let loot = { w: 0, i: 0, h: 0 }; let conquered = false;
+    const win = atk > def; const survivors = {}; let loot = { w: 0, i: 0, h: 0 }; let conquered = false;
     if (win) {
       const ratio = Math.min(0.85, def / Math.max(1, atk));
-      Object.entries(m.troops).forEach(([k, c]) => { survivors[k] = Math.max(0, c - Math.floor(c * ratio)); });
+      Object.entries(m.troops).forEach(([k, c]) => survivors[k] = Math.max(0, c - Math.floor(c * ratio)));
       const carry = Object.entries(survivors).reduce((s, [k, c]) => s + TROOPS[k].carry * c, 0);
-      const tot = enemy.resources.wood + enemy.resources.iron + enemy.resources.wheat;
-      const pct = Math.min(0.5, carry / Math.max(1, tot));
+      const tot = enemy.resources.wood + enemy.resources.iron + enemy.resources.wheat, pct = Math.min(0.5, carry / Math.max(1, tot));
       loot = { w: Math.floor(enemy.resources.wood * pct), i: Math.floor(enemy.resources.iron * pct), h: Math.floor(enemy.resources.wheat * pct) };
       const priests = survivors.priest || 0; let newLoy = enemy.loyalty;
       if (priests > 0) { newLoy = Math.max(0, enemy.loyalty - priests * 25); if (newLoy <= 0) conquered = true; }
       setTs(prev => prev.map(t => t.id !== enemy.id ? t : conquered ? { ...t, conquered: true, loyalty: 100, owner: 'Você', troops: { spearman: 0, swordsman: 0, archer: 0 } } : { ...t, loyalty: newLoy, troops: { spearman: 0, swordsman: 0, archer: 0 }, resources: { wood: t.resources.wood - loot.w, iron: t.resources.iron - loot.i, wheat: t.resources.wheat - loot.h } }));
-      if (conquered) { setG(p => ({ ...p, conquered: p.conquered + 1 })); flashFn(`👑 Você conquistou ${enemy.name}!`); }
-      else flashFn(`🏆 Vitória em ${enemy.name}! Saque a caminho.`);
+      if (conquered) { setG(p => ({ ...p, conquered: p.conquered + 1 })); flashFn(`👑 Você conquistou ${enemy.name}!`); } else flashFn(`🏆 Vitória em ${enemy.name}!`);
     } else {
-      Object.keys(m.troops).forEach(k => survivors[k] = 0);
-      const r = atk / Math.max(1, def);
+      Object.keys(m.troops).forEach(k => survivors[k] = 0); const r = atk / Math.max(1, def);
       setTs(prev => prev.map(t => t.id !== enemy.id ? t : { ...t, troops: Object.fromEntries(Object.entries(t.troops).map(([k, c]) => [k, Math.floor(c * (1 - r * 0.5))])) }));
       flashFn(`💀 Derrota em ${enemy.name}.`);
     }
@@ -299,153 +249,119 @@ export default function RealmConquest() {
   }
   const bonusMult = (k) => { let b = 1; Object.entries(BONUS).forEach(([bk, r]) => { if (g.bonus[bk] && r.tgt.includes(k)) b += (bk === 'siege' ? 0.1 : 0.05); }); return b; };
 
-  /* ----- AÇÕES ----- */
   const afford = (c) => g.resources.wood >= c.w && g.resources.iron >= c.i && g.resources.wheat >= c.h;
   const pay = (c) => setG(p => ({ ...p, resources: { wood: p.resources.wood - c.w, iron: p.resources.iron - c.i, wheat: p.resources.wheat - c.h } }));
-
   const upgrade = (key) => {
     const b = BUILDINGS[key], cur = L[key], inQ = g.buildQueue.filter(q => q.key === key).length, next = cur + inQ + 1;
     if (next > b.max) { flash('✨ Nível máximo.'); return; }
     if (g.buildQueue.length >= 2) { flash('⚠️ Fila de construção cheia (2).'); return; }
     const c = cost(b, next); if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; }
     pay(c); const time = buildTime(b, next, L.mainBuilding);
-    setG(p => ({ ...p, buildQueue: [...p.buildQueue, { key, level: next, left: time, total: time }] }));
-    flash(`🔨 ${b.name} nível ${next} na fila.`);
+    setG(p => ({ ...p, buildQueue: [...p.buildQueue, { key, level: next, left: time, total: time }] })); flash(`🔨 ${b.name} nível ${next} na fila.`);
   };
-
   const recruit = (key, amt) => {
     const t = TROOPS[key]; amt = Math.max(0, Math.floor(amt)); if (!amt) return;
-    if (t.req && L[t.build] < (t.req[Object.keys(t.req)[0]] || 0)) {}
     if (t.req && Object.entries(t.req).some(([rk, rl]) => L[rk] < rl)) { flash(`🔒 Requer Ferreiro nível ${t.req.smithy}.`); return; }
-    if (t.req == null && key !== 'priest' && key !== 'spearman' && key !== 'swordsman') {}
-    if (TROOPS[key].req == null) {} // ok
-    const needRes = key !== 'spearman' && key !== 'swordsman' && key !== 'priest' && t.req && Object.entries(t.req).some(([rk, rl]) => L[rk] < rl);
-    if (needRes) { return; }
-    if (t.req && key === 'archer' && L.smithy < 3) { }
-    const popPer = t.pop, c = { w: t.w * amt, i: t.i * amt, h: t.h * amt };
-    if (popUsed + popPer * amt > popMax) { flash('⚠️ População insuficiente (suba a Fazenda).'); return; }
+    const c = { w: t.w * amt, i: t.i * amt, h: t.h * amt };
+    if (popUsed + t.pop * amt > popMax) { flash('⚠️ População insuficiente (suba a Fazenda).'); return; }
     if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; }
     pay(c); const ut = recruitTime(t, L[t.build]);
-    setG(p => ({ ...p, recruit: { ...p.recruit, [t.build]: [...p.recruit[t.build], { key, remaining: amt, total: amt, unitTime: ut, left: ut }] } }));
-    flash(`⚔️ ${amt}× ${t.name} em treinamento.`);
+    setG(p => ({ ...p, recruit: { ...p.recruit, [t.build]: [...p.recruit[t.build], { key, remaining: amt, total: amt, unitTime: ut, left: ut }] } })); flash(`⚔️ ${amt}× ${t.name} em treinamento.`);
   };
-
-  const researchTroop = (key) => {
-    const t = TROOPS[key]; if (!t.req) { flash('Já disponível.'); return; }
-    if (L.smithy < t.req.smithy) { flash(`🔒 Ferreiro nível ${t.req.smithy}.`); return; }
-    if (g.research[key]) return;
-    const c = { w: 2000, i: 2000, h: 2000 }; if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; }
-    pay(c); setG(p => ({ ...p, research: { ...p.research, [key]: true } })); flash(`🔬 ${t.name} liberado!`);
-  };
-  const researchBonus = (key) => {
-    const r = BONUS[key]; if (L.smithy < r.smithy) { flash(`🔒 Ferreiro nível ${r.smithy}.`); return; }
-    if (g.bonus[key]) return; const c = { w: r.cost, i: r.cost, h: r.cost };
-    if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; }
-    pay(c); setG(p => ({ ...p, bonus: { ...p.bonus, [key]: true } })); flash(`⚡ ${r.effect}!`);
-  };
-
+  const researchTroop = (key) => { const t = TROOPS[key]; if (!t.req) return; if (L.smithy < t.req.smithy) { flash(`🔒 Ferreiro nível ${t.req.smithy}.`); return; } if (g.research[key]) return; const c = { w: 2000, i: 2000, h: 2000 }; if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; } pay(c); setG(p => ({ ...p, research: { ...p.research, [key]: true } })); flash(`🔬 ${t.name} liberado!`); };
+  const researchBonus = (key) => { const r = BONUS[key]; if (L.smithy < r.smithy) { flash(`🔒 Ferreiro nível ${r.smithy}.`); return; } if (g.bonus[key]) return; const c = { w: r.cost, i: r.cost, h: r.cost }; if (!afford(c)) { flash('⚠️ Recursos insuficientes.'); return; } pay(c); setG(p => ({ ...p, bonus: { ...p.bonus, [key]: true } })); flash(`⚡ ${r.effect}!`); };
   const sendTroops = (targetId, sel, mode) => {
     const target = targets.find(t => t.id === targetId); if (!target) { flash('Selecione um alvo.'); return; }
-    const entries = Object.entries(sel).filter(([k, v]) => v > 0);
-    if (!entries.length) { flash('Selecione ao menos uma tropa.'); return; }
+    const entries = Object.entries(sel).filter(([k, v]) => v > 0); if (!entries.length) { flash('Selecione ao menos uma tropa.'); return; }
     for (const [k, v] of entries) if (v > g.troops[k]) { flash(`Você não tem ${v} ${TROOPS[k].name}.`); return; }
-    const slow = Math.min(...entries.map(([k]) => TROOPS[k].speed));
-    const d = dist(HOME, target); const travel = Math.max(6, Math.round(d * 24 / slow));
+    const slow = Math.min(...entries.map(([k]) => TROOPS[k].speed)); const d = dist(HOME, target); const travel = Math.max(6, Math.round(d * 24 / slow));
     const troops = {}; entries.forEach(([k, v]) => troops[k] = v);
-    setG(p => {
-      const nt = { ...p.troops }; entries.forEach(([k, v]) => nt[k] -= v);
-      return { ...p, troops: nt, movements: [...p.movements, { id: Date.now() + Math.random(), troops, target: { id: target.id, name: target.name, x: target.x, y: target.y }, mode, phase: 'out', left: travel, total: travel }] };
-    });
+    setG(p => { const nt = { ...p.troops }; entries.forEach(([k, v]) => nt[k] -= v); return { ...p, troops: nt, movements: [...p.movements, { id: Date.now() + Math.random(), troops, target: { id: target.id, name: target.name, x: target.x, y: target.y }, mode, phase: 'out', left: travel, total: travel }] }; });
     flash(`${mode === 'attack' ? '⚔️ Ataque' : '🛡️ Apoio'} enviado a ${target.name} (chega em ${fmtTime(travel)}).`);
   };
-  const recall = (movId) => {
-    setG(p => ({ ...p, movements: p.movements.map(m => m.id === movId && m.phase === 'stationed' ? { ...m, phase: 'back', left: m.total, total: m.total } : m) }));
-    flash('↩️ Tropas voltando para casa.');
-  };
+  const recall = (id) => { setG(p => ({ ...p, movements: p.movements.map(m => m.id === id && m.phase === 'stationed' ? { ...m, phase: 'back', left: m.total, total: m.total } : m) })); flash('↩️ Tropas voltando.'); };
+  const reset = () => { if (window.confirm('Reiniciar tudo? O progresso será perdido.')) { setG(startState()); setTargets(genTargets()); setScreen('village'); } };
 
-  const reset = () => { if (window.confirm('Reiniciar tudo? O progresso será perdido.')) { setG(startState()); setTargets(genTargets()); setOpen(null); } };
+  const C = { ink: '#efe3c8', sub: '#b6a373', gold: '#d4af37', w1: '#241a0e', w2: '#3a2c1b', w3: '#4a3826', border: '#5a4426', green: '#3d5a2d', greenB: '#5e8a3e', red: '#7c2820', redB: '#a0463e', blue: '#274a5a', blueB: '#3f7186', parch: '#e7d9b8', parchD: '#d2bf98' };
+  const order = Object.entries(BUILDINGS).filter(([, c]) => !c.viz.wall).sort((a, b) => a[1].viz.cy - b[1].viz.cy);
+  const shared = { g, L, C, targets, popUsed, popMax, afford, upgrade, recruit, researchTroop, researchBonus, sendTroops, recall, setReport, setScreen, flash };
 
-  const order = Object.entries(BUILDINGS).sort((a, b) => a[1].viz.cy - b[1].viz.cy);
-  const C = { ink: '#efe3c8', sub: '#b6a373', gold: '#d4af37', w1: '#2a1f12', w2: '#3a2c1b', border: '#5a4426', green: '#3d5a2d', greenB: '#5e8a3e', red: '#7c2820', redB: '#a0463e', blue: '#274a5a', blueB: '#3f7186' };
+  const NAV = [['village', '🏰', 'Aldeia'], ['mapa', '🗺️', 'Mapa'], ['recrutar', '⚔️', 'Recrutar'], ['command', '🛡️', 'Tropas'], ['reports', '📜', 'Relatórios'], ['ranking', '🏆', 'Classificação'], ['tribo', '⚜️', 'Tribo'], ['amigos', '👥', 'Amigos'], ['perfil', '👤', 'Perfil']];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(1200px 600px at 50% -10%, #2f2a1d 0%, #1a1610 60%, #120f0a 100%)', fontFamily: "'Cinzel', Georgia, serif", color: C.ink, padding: '10px' }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap');`}</style>
-      <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'radial-gradient(1200px 600px at 50% -10%, #2f2a1d 0%, #1a1610 60%, #120f0a 100%)', fontFamily: "'Cinzel', Georgia, serif", color: C.ink }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap'); *{box-sizing:border-box} .nv:hover{filter:brightness(1.15)}`}</style>
 
-        {/* BARRA SUPERIOR */}
-        <div style={{ background: `linear-gradient(${C.w2}, ${C.w1})`, border: `2px solid ${C.border}`, borderRadius: '12px', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '22px' }}>⚔️</span>
-            <div><div style={{ fontSize: '17px', fontWeight: 700, letterSpacing: '1px', color: C.gold }}>Minha Capital</div>
-              <div style={{ fontSize: '11px', color: C.sub, fontFamily: 'Georgia, serif' }}>(500|350) · 🏰 {1 + g.conquered} aldeia(s)</div></div>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', fontFamily: 'Georgia, serif' }}>
-            <Res icon="🪵" val={g.resources.wood} cap={whCap} color="#b9893f" />
-            <Res icon="⛏️" val={g.resources.iron} cap={whCap} color="#9aa0a6" />
-            <Res icon="🌾" val={g.resources.wheat} cap={whCap} color="#c8a13a" />
-            <div style={{ background: 'rgba(0,0,0,.3)', border: `1px solid ${C.border}`, borderRadius: '8px', padding: '4px 10px', fontSize: '12px' }}>
-              <span style={{ color: C.sub }}>👥 </span><b style={{ color: popUsed >= popMax ? '#d0453a' : C.ink }}>{fmt(popUsed)}</b><span style={{ color: C.sub }}>/{fmt(popMax)}</span></div>
-            <button onClick={reset} title="Reiniciar" style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.sub, borderRadius: '8px', padding: '4px 8px', cursor: 'pointer' }}>🔄</button>
-          </div>
+      {/* HEADER */}
+      <div style={{ background: `linear-gradient(${C.w2}, ${C.w1})`, borderBottom: `2px solid ${C.border}`, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>⚔️</span>
+          <div><div style={{ fontSize: 17, fontWeight: 700, letterSpacing: 1, color: C.gold }}>REALM CONQUEST</div>
+            <div style={{ fontSize: 11, color: C.sub, fontFamily: 'Georgia, serif' }}>Minha Capital · (500|350) · 🏰 {1 + g.conquered}</div></div>
         </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', fontFamily: 'Georgia, serif' }}>
+          <Res icon="🪵" val={g.resources.wood} cap={whCap} color="#b9893f" rate={rates.wood} />
+          <Res icon="⛏️" val={g.resources.iron} cap={whCap} color="#9aa0a6" rate={rates.iron} />
+          <Res icon="🌾" val={g.resources.wheat} cap={whCap} color="#c8a13a" rate={rates.wheat} />
+          <div style={{ background: 'rgba(0,0,0,.3)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '4px 10px', fontSize: 12 }}><span style={{ color: C.sub }}>👥 </span><b style={{ color: popUsed >= popMax ? '#d0453a' : C.ink }}>{fmt(popUsed)}</b><span style={{ color: C.sub }}>/{fmt(popMax)}</span></div>
+          <button onClick={reset} title="Reiniciar" style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.sub, borderRadius: 8, padding: '4px 8px', cursor: 'pointer' }}>🔄</button>
+        </div>
+      </div>
 
-        {toast && <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: 'rgba(26,18,8,.96)', border: `2px solid ${C.gold}`, borderRadius: '10px', padding: '10px 18px', fontSize: '13px', fontFamily: 'Georgia, serif', boxShadow: '0 6px 20px rgba(0,0,0,.6)', maxWidth: '92%' }}>{toast}</div>}
+      {/* NAV (ícones) */}
+      <div style={{ background: C.w1, borderBottom: `2px solid ${C.border}`, padding: '6px 8px', display: 'flex', gap: 4, overflowX: 'auto' }}>
+        {NAV.map(([key, ic, label]) => {
+          const active = screen === key || (key === 'recrutar' && ['barracks', 'stable', 'workshop', 'church'].includes(screen));
+          return (<button key={key} className="nv" onClick={() => setScreen(key)} style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minWidth: 66, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${active ? C.gold : 'transparent'}`, background: active ? 'rgba(212,175,55,.16)' : 'transparent', color: active ? C.gold : C.sub, fontFamily: 'inherit' }}>
+            <span style={{ fontSize: 18 }}>{ic}</span><span style={{ fontSize: 10.5, fontFamily: 'Georgia, serif' }}>{label}</span></button>);
+        })}
+      </div>
 
-        {/* FILAS resumo */}
+      {toast && <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: 'rgba(26,18,8,.96)', border: `2px solid ${C.gold}`, borderRadius: 10, padding: '10px 18px', fontSize: 13, fontFamily: 'Georgia, serif', boxShadow: '0 6px 20px rgba(0,0,0,.6)', maxWidth: '92%' }}>{toast}</div>}
+
+      {/* CONTEÚDO */}
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: 12 }}>
+        {/* filas */}
         {(g.buildQueue.length > 0 || Object.values(g.recruit).some(q => q.length) || g.movements.length > 0) && (
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap', fontFamily: 'Georgia, serif', fontSize: '12px' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap', fontFamily: 'Georgia, serif', fontSize: 12 }}>
             {g.buildQueue[0] && <Pill C={C}>🔨 {BUILDINGS[g.buildQueue[0].key].name} {g.buildQueue[0].level} · {fmtTime(g.buildQueue[0].left)}</Pill>}
-            {Object.entries(g.recruit).map(([bk, q]) => q[0] && <Pill key={bk} C={C}>{TROOPS[q[0].key].icon} {q[0].remaining}× {TROOPS[q[0].key].name} · {fmtTime(q[0].left)}</Pill>)}
-            {g.movements.slice(0, 3).map(m => <Pill key={m.id} C={C}>{m.phase === 'stationed' ? '🛡️ em' : m.mode === 'attack' ? (m.phase === 'back' ? '🏠 de' : '⚔️ →') : '🛡️ →'} {m.target.name}{m.phase !== 'stationed' ? ' · ' + fmtTime(m.left) : ''}</Pill>)}
+            {Object.entries(g.recruit).map(([bk, q]) => q[0] && <Pill key={bk} C={C}>{TROOPS[q[0].key].icon} {q[0].remaining}× · {fmtTime(q[0].left)}</Pill>)}
+            {g.movements.slice(0, 3).map(m => <Pill key={m.id} C={C}>{m.phase === 'stationed' ? '🛡️ em' : m.mode === 'attack' ? (m.phase === 'back' ? '🏠 de' : '⚔️→') : '🛡️→'} {m.target.name}{m.phase !== 'stationed' ? ' · ' + fmtTime(m.left) : ''}</Pill>)}
           </div>
         )}
 
-        {/* ALDEIA */}
-        <div style={{ marginTop: '10px', background: '#152613', border: `3px solid ${C.border}`, borderRadius: '14px', overflow: 'hidden', boxShadow: 'inset 0 0 60px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.5)' }}>
-          <svg viewBox="0 0 1000 660" style={{ width: '100%', display: 'block' }} onClick={() => setOpen(null)}>
-            <defs>
-              <radialGradient id="grass" cx="50%" cy="42%" r="62%"><stop offset="0%" stopColor="#6fa84a" /><stop offset="55%" stopColor="#5b8f3c" /><stop offset="100%" stopColor="#3f6a2a" /></radialGradient>
-              <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="rgba(0,0,0,0.25)" /></filter>
-              <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#f0d98a" floodOpacity="0.9" /></filter>
-            </defs>
-            <ellipse cx="500" cy="350" rx="470" ry="250" fill="#34571f" />
-            <ellipse cx="500" cy="340" rx="450" ry="235" fill="url(#grass)" />
-            <ellipse cx="350" cy="300" rx="120" ry="55" fill="rgba(255,255,255,0.04)" />
-            <ellipse cx="650" cy="420" rx="140" ry="60" fill="rgba(0,0,0,0.05)" />
-            <g stroke="#c4a86f" strokeOpacity="0.5" strokeLinecap="round" fill="none">
-              {order.map(([id, cfg]) => <line key={'p' + id} x1={492} y1={402} x2={cfg.viz.cx} y2={cfg.viz.cy + 26 * cfg.viz.s} strokeWidth={14 * cfg.viz.s} />)}
-            </g>
-            {g.wall > 0 && <ellipse cx="500" cy="345" rx={448} ry={236} fill="none" stroke="#8b8170" strokeWidth={4 + g.wall * 0.6} strokeOpacity="0.85" />}
-            <Tree x={150} y={420} s={1.1} /><Tree x={860} y={250} s={1} /><Tree x={130} y={300} s={0.9} />
-            <Tree x={880} y={470} s={1.05} /><Tree x={430} y={585} s={0.95} /><Tree x={600} y={585} s={0.9} />
-            <Rock x={210} y={520} s={1} /><Rock x={820} y={560} s={0.9} /><Rock x={760} y={205} s={0.8} />
-            {order.map(([id, cfg]) => (
-              <IsoBuilding key={id} id={id} cfg={cfg} level={L[id]} hovered={hovered === id} selected={open === id}
-                building={g.buildQueue[0]?.key === id}
-                progress={g.buildQueue[0]?.key === id ? ((g.buildQueue[0].total - g.buildQueue[0].left) / g.buildQueue[0].total) * 100 : 0}
-                onHover={setHovered} onClick={setOpen} />
-            ))}
-          </svg>
-        </div>
-        <div style={{ textAlign: 'center', fontSize: '11px', color: C.sub, marginTop: '6px', fontFamily: 'Georgia, serif' }}>👆 Clique em um edifício para abrir suas funções · 🏰 Centro de Comando = todas as suas tropas</div>
+        {screen === 'village' && (<>
+          <div style={{ background: '#152613', border: `3px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: 'inset 0 0 60px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.5)' }}>
+            <svg viewBox="0 0 1000 680" style={{ width: '100%', display: 'block' }} onClick={() => { }}>
+              <defs><radialGradient id="grass" cx="50%" cy="42%" r="62%"><stop offset="0%" stopColor="#6fa84a" /><stop offset="55%" stopColor="#5b8f3c" /><stop offset="100%" stopColor="#3f6a2a" /></radialGradient></defs>
+              <ellipse cx="500" cy="350" rx="478" ry="252" fill="#34571f" />
+              <ellipse cx="500" cy="342" rx="458" ry="238" fill="url(#grass)" />
+              <ellipse cx="350" cy="300" rx="120" ry="55" fill="rgba(255,255,255,0.04)" /><ellipse cx="650" cy="420" rx="140" ry="60" fill="rgba(0,0,0,0.05)" />
+              <WallRing level={L.wall} onGate={() => setScreen('wall')} hovered={hovered === 'wall'} />
+              <g stroke="#c4a86f" strokeOpacity="0.5" strokeLinecap="round" fill="none">{order.map(([id, cfg]) => <line key={'p' + id} x1={492} y1={402} x2={cfg.viz.cx} y2={cfg.viz.cy + 24 * cfg.viz.s} strokeWidth={13 * cfg.viz.s} />)}</g>
+              <Tree x={150} y={430} s={1.1} /><Tree x={862} y={250} s={1} /><Tree x={120} y={300} s={0.9} /><Tree x={888} y={476} s={1.05} /><Tree x={430} y={600} s={0.95} /><Tree x={600} y={600} s={0.9} />
+              <Rock x={195} y={540} s={1} /><Rock x={832} y={566} s={0.9} /><Rock x={770} y={196} s={0.8} />
+              {order.map(([id, cfg]) => (<IsoBuilding key={id} id={id} cfg={cfg} level={L[id]} hovered={hovered === id} selected={false} building={g.buildQueue[0]?.key === id} progress={g.buildQueue[0]?.key === id ? ((g.buildQueue[0].total - g.buildQueue[0].left) / g.buildQueue[0].total) * 100 : 0} onHover={setHovered} onClick={(bid) => setScreen(bid)} />))}
+            </svg>
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: C.sub, marginTop: 6, fontFamily: 'Georgia, serif' }}>👆 Clique em um edifício para abrir a página dele · clique no 🚪 portão para a Muralha · 🏰 torre central = suas tropas</div>
+        </>)}
+
+        {BUILDINGS[screen] && <BuildingPage bid={screen} {...shared} />}
+        {screen === 'command' && <Panel C={C} title="🛡️ Centro de Comando" sub="Todas as suas tropas e envios" onBack={() => setScreen('village')}><CommandCenter {...shared} /></Panel>}
+        {screen === 'recrutar' && <RecruitHub {...shared} />}
+        {screen === 'mapa' && <MapScreen {...shared} />}
+        {screen === 'reports' && <ReportsScreen {...shared} />}
+        {screen === 'ranking' && <RankingScreen {...shared} />}
+        {screen === 'tribo' && <TribeChat {...shared} />}
+        {screen === 'amigos' && <PreviewScreen C={C} icon="👥" title="Amigos" onBack={() => setScreen('village')} text="Lista de amigos, convites e apoio entre aliados aparecem aqui. Também depende do modo multiplayer (servidor) para conectar jogadores reais." />}
+        {screen === 'perfil' && <ProfileScreen {...shared} />}
       </div>
 
-      {/* MODAL DO EDIFÍCIO */}
-      {open && (
-        <Modal C={C} title={`${BUILDINGS[open].icon}  ${BUILDINGS[open].name}`} subtitle={`Nível ${L[open]}${BUILDINGS[open].max > 1 ? ' / ' + BUILDINGS[open].max : ''}`} onClose={() => setOpen(null)}>
-          <BuildingContent bid={open} g={g} L={L} C={C} targets={targets} popUsed={popUsed} popMax={popMax}
-            afford={afford} upgrade={upgrade} recruit={recruit} researchTroop={researchTroop} researchBonus={researchBonus}
-            sendTroops={sendTroops} recall={recall} setReport={setReport} />
-        </Modal>
-      )}
-
-      {/* RELATÓRIO */}
       {report && (
         <Modal C={C} title={report.win ? (report.conquered ? '👑 Conquista!' : '🏆 Vitória') : '💀 Derrota'} subtitle={`Ataque a ${report.name}`} onClose={() => setReport(null)}>
-          <div style={{ fontFamily: 'Georgia, serif', fontSize: '13px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}><span>⚔️ Seu poder</span><b style={{ color: C.gold }}>{fmt(report.atk)}</b></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}><span>🛡️ Defesa inimiga</span><b style={{ color: C.gold }}>{fmt(report.def)}</b></div>
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 13 }}>
+            <Row k="⚔️ Seu poder" v={fmt(report.atk)} C={C} /><Row k="🛡️ Defesa inimiga" v={fmt(report.def)} C={C} />
             {report.win && <div style={{ marginTop: 8, background: 'rgba(61,90,45,.25)', borderRadius: 8, padding: 10 }}>💰 Saque: 🪵 {fmt(report.loot.w)} · ⛏️ {fmt(report.loot.i)} · 🌾 {fmt(report.loot.h)}</div>}
             {Object.values(report.losses).some(v => v > 0) && <div style={{ marginTop: 8, color: '#d68f88' }}>☠️ Baixas: {Object.entries(report.losses).filter(([k, v]) => v > 0).map(([k, v]) => `${v} ${TROOPS[k].name}`).join(', ')}</div>}
           </div>
@@ -455,131 +371,80 @@ export default function RealmConquest() {
   );
 }
 
-/* ---------- CONTEÚDO POR EDIFÍCIO ---------- */
+/* ---------- PÁGINA DE EDIFÍCIO ---------- */
+function BuildingPage(p) {
+  const { bid, L, C } = p; const b = BUILDINGS[bid];
+  return (
+    <Panel C={C} title={`${b.icon}  ${b.name}`} sub={`Nível ${L[bid]}${b.max > 1 ? ' / ' + b.max : ''}`} onBack={() => p.setScreen('village')}>
+      <BuildingContent {...p} />
+    </Panel>
+  );
+}
+
 function BuildingContent(p) {
   const { bid, g, L, C } = p; const b = BUILDINGS[bid]; const cat = b.cat;
   const next = L[bid] + g.buildQueue.filter(q => q.key === bid).length + 1;
   const nextCost = next <= b.max ? cost(b, next) : null;
-  const upBtn = next > b.max ? <div style={s.maxed(C)}>✨ Nível máximo</div> : (
-    <div style={{ marginTop: 12, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-      <div style={{ fontSize: 11, color: C.sub, fontFamily: 'Georgia, serif' }}>Evoluir para nível {next}:</div>
-      <div style={{ display: 'flex', gap: 10, fontSize: 13, margin: '4px 0', fontFamily: 'Georgia, serif' }}>
-        <span style={{ color: p.afford(nextCost) ? C.ink : '#c0564e' }}>🪵 {fmt(nextCost.w)}</span>
-        <span style={{ color: p.afford(nextCost) ? C.ink : '#c0564e' }}>⛏️ {fmt(nextCost.i)}</span>
-        <span style={{ color: p.afford(nextCost) ? C.ink : '#c0564e' }}>🌾 {fmt(nextCost.h)}</span>
-        <span style={{ color: C.sub }}>⏱️ {fmtTime(buildTime(b, next, L.mainBuilding))}</span>
+  const UP = next > b.max ? <div style={st.maxed(C)}>✨ Nível máximo</div> : (
+    <div style={{ marginTop: 14, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+      <div style={{ fontSize: 12, color: C.w1, fontFamily: 'Georgia, serif', fontWeight: 700 }}>Evoluir para nível {next}:</div>
+      <div style={{ display: 'flex', gap: 12, fontSize: 13, margin: '6px 0', fontFamily: 'Georgia, serif' }}>
+        <span style={{ color: p.afford(nextCost) ? C.w1 : '#a83228' }}>🪵 {fmt(nextCost.w)}</span><span style={{ color: p.afford(nextCost) ? C.w1 : '#a83228' }}>⛏️ {fmt(nextCost.i)}</span><span style={{ color: p.afford(nextCost) ? C.w1 : '#a83228' }}>🌾 {fmt(nextCost.h)}</span><span style={{ color: '#7a6a4a' }}>⏱️ {fmtTime(buildTime(b, next, L.mainBuilding))}</span>
       </div>
-      <button onClick={() => p.upgrade(bid)} disabled={!p.afford(nextCost)} style={s.btn(C, p.afford(nextCost) ? 'green' : 'off')}>{L[bid] === 0 ? '🔨 Construir' : '⬆️ Evoluir edifício'}</button>
+      <button onClick={() => p.upgrade(bid)} disabled={!p.afford(nextCost)} style={st.btn(C, p.afford(nextCost) ? 'green' : 'off')}>{L[bid] === 0 ? '🔨 Construir' : '⬆️ Evoluir edifício'}</button>
     </div>
   );
 
   if (cat === 'command') return <CommandCenter {...p} />;
 
   if (cat === 'infantry' || cat === 'cavalry' || cat === 'siege' || cat === 'conquest') {
-    const list = cat === 'conquest' ? ['priest'] : b.trains;
-    const queue = g.recruit[bid] || [];
+    const list = cat === 'conquest' ? ['priest'] : b.trains; const queue = g.recruit[bid] || [];
     return (<div>
-      <p style={s.desc(C)}>{b.desc}</p>
-      {L[bid] === 0 ? <div style={s.lock(C)}>🔒 Construa este edifício para treinar tropas.</div> : (
-        <div>
-          {list.map(k => <RecruitRow key={k} k={k} g={g} L={L} C={C} afford={p.afford} recruit={p.recruit} popUsed={p.popUsed} popMax={p.popMax} />)}
-          {queue.length > 0 && (
-            <div style={{ marginTop: 10, background: 'rgba(0,0,0,.25)', borderRadius: 8, padding: 8, fontFamily: 'Georgia, serif', fontSize: 12 }}>
-              <div style={{ color: C.gold, marginBottom: 4 }}>⏳ Treinando:</div>
-              {queue.map((it, i) => (<div key={i} style={{ marginBottom: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{TROOPS[it.key].icon} {it.remaining}× {TROOPS[it.key].name}</span><span style={{ color: C.sub }}>{fmtTime(it.left + (it.remaining - 1) * it.unitTime)}</span></div>
-                {i === 0 && <div style={{ height: 5, background: '#241a0c', borderRadius: 3, marginTop: 2 }}><div style={{ height: '100%', width: `${((it.unitTime - it.left) / it.unitTime) * 100}%`, background: C.gold, borderRadius: 3 }} /></div>}
-              </div>))}
-            </div>
-          )}
-        </div>
-      )}
-      {upBtn}
+      <p style={st.desc(C)}>{b.desc}</p>
+      {L[bid] === 0 ? <div style={st.lock(C)}>🔒 Construa este edifício para treinar tropas.</div> : (<div>
+        {list.map(k => <RecruitRow key={k} k={k} {...p} />)}
+        {queue.length > 0 && (<div style={{ marginTop: 10, background: 'rgba(0,0,0,.06)', border: `1px solid ${C.parchD}`, borderRadius: 8, padding: 8, fontFamily: 'Georgia, serif', fontSize: 12, color: C.w1 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>⏳ Treinando:</div>
+          {queue.map((it, i) => (<div key={i} style={{ marginBottom: 4 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{TROOPS[it.key].icon} {it.remaining}× {TROOPS[it.key].name}</span><span>{fmtTime(it.left + (it.remaining - 1) * it.unitTime)}</span></div>{i === 0 && <div style={{ height: 5, background: '#cbb88f', borderRadius: 3, marginTop: 2 }}><div style={{ height: '100%', width: `${((it.unitTime - it.left) / it.unitTime) * 100}%`, background: C.green, borderRadius: 3 }} /></div>}</div>))}
+        </div>)}
+      </div>)}
+      {UP}
     </div>);
   }
-
   if (cat === 'research') return (<div>
-    <p style={s.desc(C)}>{b.desc}</p>
-    {L.smithy === 0 ? <div style={s.lock(C)}>🔒 Construa o Ferreiro primeiro.</div> : (<>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, margin: '6px 0' }}>🔬 Liberar tropas</div>
+    <p style={st.desc(C)}>{b.desc}</p>
+    {L.smithy === 0 ? <div style={st.lock(C)}>🔒 Construa o Ferreiro primeiro.</div> : (<>
+      <SubTitle C={C}>🔬 Liberar tropas</SubTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 6 }}>
-        {Object.entries(TROOPS).filter(([k, t]) => t.req).map(([k, t]) => {
-          const done = g.research[k], can = L.smithy >= t.req.smithy;
-          return (<div key={k} style={{ background: done ? 'rgba(61,90,45,.3)' : 'rgba(0,0,0,.2)', border: `1px solid ${done ? C.greenB : C.border}`, borderRadius: 8, padding: 8, fontFamily: 'Georgia, serif' }}>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>{t.icon} {t.name}</div>
-            <div style={{ fontSize: 10, color: C.sub }}>Ferreiro nv{t.req.smithy}</div>
-            {done ? <div style={{ fontSize: 11, color: C.greenB }}>✓ Liberado</div> : <button onClick={() => p.researchTroop(k)} disabled={!can || !p.afford({ w: 2000, i: 2000, h: 2000 })} style={{ ...s.btn(C, can && p.afford({ w: 2000, i: 2000, h: 2000 }) ? 'blue' : 'off'), padding: 6, marginTop: 4, fontSize: 11 }}>2.000 cada</button>}
-          </div>);
-        })}
+        {Object.entries(TROOPS).filter(([k, t]) => t.req).map(([k, t]) => { const done = g.research[k], can = L.smithy >= t.req.smithy; return (<div key={k} style={st.card(C, done)}><div style={{ fontSize: 12, fontWeight: 700, color: C.w1 }}>{t.icon} {t.name}</div><div style={{ fontSize: 10, color: '#7a6a4a' }}>Ferreiro nv{t.req.smithy}</div>{done ? <div style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>✓ Liberado</div> : <button onClick={() => p.researchTroop(k)} disabled={!can || !p.afford({ w: 2000, i: 2000, h: 2000 })} style={{ ...st.btn(C, can && p.afford({ w: 2000, i: 2000, h: 2000 }) ? 'blue' : 'off'), padding: 6, marginTop: 4, fontSize: 11 }}>2.000 cada</button>}</div>); })}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, margin: '12px 0 6px' }}>⚡ Melhorias</div>
+      <SubTitle C={C}>⚡ Melhorias</SubTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 6 }}>
-        {Object.entries(BONUS).map(([k, r]) => {
-          const done = g.bonus[k], can = L.smithy >= r.smithy;
-          return (<div key={k} style={{ background: done ? 'rgba(212,175,55,.18)' : 'rgba(0,0,0,.2)', border: `1px solid ${done ? C.gold : C.border}`, borderRadius: 8, padding: 8, fontFamily: 'Georgia, serif' }}>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>{r.icon} {r.name}</div>
-            <div style={{ fontSize: 10, color: '#9fd06a' }}>{r.effect}</div>
-            {done ? <div style={{ fontSize: 11, color: C.gold }}>⚡ Ativo</div> : <button onClick={() => p.researchBonus(k)} disabled={!can || !p.afford({ w: r.cost, i: r.cost, h: r.cost })} style={{ ...s.btn(C, can && p.afford({ w: r.cost, i: r.cost, h: r.cost }) ? 'blue' : 'off'), padding: 6, marginTop: 4, fontSize: 11 }}>{fmt(r.cost)} cada</button>}
-          </div>);
-        })}
+        {Object.entries(BONUS).map(([k, r]) => { const done = g.bonus[k], can = L.smithy >= r.smithy; return (<div key={k} style={st.card(C, done)}><div style={{ fontSize: 12, fontWeight: 700, color: C.w1 }}>{r.icon} {r.name}</div><div style={{ fontSize: 10, color: '#3d6a22' }}>{r.effect}</div>{done ? <div style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>⚡ Ativo</div> : <button onClick={() => p.researchBonus(k)} disabled={!can || !p.afford({ w: r.cost, i: r.cost, h: r.cost })} style={{ ...st.btn(C, can && p.afford({ w: r.cost, i: r.cost, h: r.cost }) ? 'blue' : 'off'), padding: 6, marginTop: 4, fontSize: 11 }}>{fmt(r.cost)} cada</button>}</div>); })}
       </div>
     </>)}
-    {upBtn}
+    {UP}
   </div>);
-
-  if (cat === 'resource') return (<div>
-    <p style={s.desc(C)}>{b.desc}</p>
-    <div style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: 10, fontFamily: 'Georgia, serif', fontSize: 13 }}>
-      📈 Produção atual: <b style={{ color: '#9fd06a' }}>{fmt(production(L[bid]))}/h</b>{next <= b.max && <> → próximo: <b style={{ color: C.gold }}>{fmt(production(next))}/h</b></>}
-    </div>
-    {upBtn}
-  </div>);
-
-  if (cat === 'storage') return (<div>
-    <p style={s.desc(C)}>{b.desc}</p>
-    <div style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: 10, fontFamily: 'Georgia, serif', fontSize: 13 }}>
-      📦 Capacidade: <b style={{ color: C.gold }}>{fmt(warehouseCap(L[bid]))}</b>{next <= b.max && <> → <b style={{ color: '#9fd06a' }}>{fmt(warehouseCap(next))}</b></>}
-    </div>
-    {upBtn}
-  </div>);
-
-  if (cat === 'main') return (<div>
-    <p style={s.desc(C)}>{b.desc}</p>
-    <div style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: 10, fontFamily: 'Georgia, serif', fontSize: 13 }}>
-      ⏱️ Redução de tempo de construção: <b style={{ color: C.gold }}>{Math.min(50, (L[bid] - 1) * 2)}%</b>
-    </div>
-    {upBtn}
-  </div>);
-
-  // market & wall
-  return (<div>
-    <p style={s.desc(C)}>{b.desc}</p>
-    {cat === 'wall' && <div style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: 10, fontFamily: 'Georgia, serif', fontSize: 13 }}>🛡️ Bônus de defesa: <b style={{ color: C.gold }}>+{L[bid] * 5}%</b></div>}
-    {upBtn}
-  </div>);
+  if (cat === 'resource') return (<div><p style={st.desc(C)}>{b.desc}</p><div style={st.info(C)}>📈 Produção: <b>{fmt(production(L[bid]))}/h</b>{next <= b.max && <> → próximo: <b style={{ color: C.green }}>{fmt(production(next))}/h</b></>}</div>{UP}</div>);
+  if (cat === 'storage') return (<div><p style={st.desc(C)}>{b.desc}</p><div style={st.info(C)}>📦 Capacidade: <b>{fmt(warehouseCap(L[bid]))}</b>{next <= b.max && <> → <b style={{ color: C.green }}>{fmt(warehouseCap(next))}</b></>}</div>{UP}</div>);
+  if (cat === 'main') return (<div><p style={st.desc(C)}>{b.desc}</p><div style={st.info(C)}>⏱️ Redução do tempo de construção: <b>{Math.min(50, (L[bid] - 1) * 2)}%</b></div>{UP}</div>);
+  if (cat === 'wall') return (<div><p style={st.desc(C)}>{b.desc}</p><div style={st.info(C)}>🛡️ Bônus de defesa atual: <b>+{L[bid] * 5}%</b>{next <= b.max && <> → próximo: <b style={{ color: C.green }}>+{next * 5}%</b></>}</div><div style={{ ...st.info(C), marginTop: 6 }}>🏯 A muralha em volta da aldeia cresce a cada nível. No nível 8 surgem torres nos cantos.</div>{UP}</div>);
+  return (<div><p style={st.desc(C)}>{b.desc}</p>{UP}</div>);
 }
 
-/* ---------- LINHA DE RECRUTAMENTO ---------- */
-function RecruitRow({ k, g, L, C, afford, recruit, popUsed, popMax }) {
-  const t = TROOPS[k]; const [qty, setQty] = useState('');
+function RecruitRow(p) {
+  const { k, g, L, C } = p; const t = TROOPS[k]; const [qty, setQty] = useState('');
   const locked = t.req && Object.entries(t.req).some(([rk, rl]) => L[rk] < rl);
   const maxByRes = Math.min(t.w ? Math.floor(g.resources.wood / t.w) : 9999, t.i ? Math.floor(g.resources.iron / t.i) : 9999, t.h ? Math.floor(g.resources.wheat / t.h) : 9999);
-  const maxByPop = Math.floor((popMax - popUsed) / t.pop);
-  const maxRec = Math.max(0, Math.min(maxByRes, maxByPop));
+  const maxByPop = Math.floor((p.popMax - p.popUsed) / t.pop); const maxRec = Math.max(0, Math.min(maxByRes, maxByPop));
   return (
-    <div style={{ background: 'rgba(0,0,0,.2)', border: `1px solid ${C.border}`, borderRadius: 8, padding: 8, marginBottom: 6, opacity: locked ? 0.6 : 1, fontFamily: 'Georgia, serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 22 }}>{t.icon}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{t.name} <span style={{ fontSize: 11, color: C.sub, fontWeight: 400 }}>· tem {fmt(g.troops[k])}</span></div>
-          <div style={{ fontSize: 10, color: C.sub }}>⚔️{t.atk} 🛡️{t.def} 🏃{t.speed} 👤{t.pop} · 🪵{t.w} ⛏️{t.i} 🌾{t.h}</div>
-        </div>
-      </div>
-      {locked ? <div style={{ fontSize: 11, color: '#d68f88', marginTop: 4 }}>🔒 Requer Ferreiro nível {t.req.smithy} (libere na aba do Ferreiro)</div> : (
+    <div style={{ background: 'rgba(0,0,0,.05)', border: `1px solid ${C.parchD}`, borderRadius: 8, padding: 8, marginBottom: 6, opacity: locked ? 0.65 : 1, fontFamily: 'Georgia, serif', color: C.w1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontSize: 24 }}>{t.icon}</span><div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{t.name} <span style={{ fontSize: 11, color: '#7a6a4a', fontWeight: 400 }}>· tem {fmt(g.troops[k])}</span></div><div style={{ fontSize: 10, color: '#7a6a4a' }}>⚔️{t.atk} 🛡️{t.def} 🏃{t.speed} 👤{t.pop} · custo 🪵{t.w} ⛏️{t.i} 🌾{t.h}</div></div></div>
+      {locked ? <div style={{ fontSize: 11, color: '#a83228', marginTop: 4 }}>🔒 Requer Ferreiro nível {t.req.smithy} (libere na página do Ferreiro)</div> : (
         <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
-          <input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" style={{ width: 70, background: '#1a130a', border: `1px solid ${C.border}`, borderRadius: 6, padding: '6px', color: C.ink, fontFamily: 'inherit', fontSize: 13 }} />
-          <button onClick={() => setQty(String(maxRec))} style={{ ...s.btn(C, 'ghost'), padding: '6px 8px', fontSize: 11, width: 'auto' }}>máx {maxRec}</button>
-          <button onClick={() => { recruit(k, parseInt(qty) || 0); setQty(''); }} disabled={!qty || (parseInt(qty) || 0) <= 0} style={{ ...s.btn(C, qty && (parseInt(qty) || 0) > 0 ? 'red' : 'off'), padding: '6px', fontSize: 12, flex: 1 }}>⚔️ Recrutar</button>
+          <input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" style={{ width: 72, background: '#fff', border: `1px solid ${C.parchD}`, borderRadius: 6, padding: 6, color: C.w1, fontFamily: 'inherit', fontSize: 13 }} />
+          <button onClick={() => setQty(String(maxRec))} style={{ ...st.btn(C, 'ghost'), padding: '6px 8px', fontSize: 11, width: 'auto' }}>máx {maxRec}</button>
+          <button onClick={() => { p.recruit(k, parseInt(qty) || 0); setQty(''); }} disabled={!qty || (parseInt(qty) || 0) <= 0} style={{ ...st.btn(C, qty && (parseInt(qty) || 0) > 0 ? 'red' : 'off'), padding: 6, fontSize: 12, flex: 1 }}>⚔️ Recrutar</button>
         </div>
       )}
     </div>
@@ -589,133 +454,307 @@ function RecruitRow({ k, g, L, C, afford, recruit, popUsed, popMax }) {
 /* ---------- CENTRO DE COMANDO ---------- */
 function CommandCenter(p) {
   const { g, C, targets } = p;
-  const [view, setView] = useState('tropas'); // tropas | enviar | movimentos
+  const [view, setView] = useState('tropas');
   const [tid, setTid] = useState(targets.find(t => !t.conquered)?.id || targets[0]?.id);
-  const [mode, setMode] = useState('attack');
-  const [sel, setSel] = useState({});
-  const awayByVillage = {};
-  g.movements.forEach(m => { const key = m.target.name + (m.phase === 'stationed' ? ' (apoio)' : m.mode === 'attack' ? (m.phase === 'back' ? ' (voltando)' : ' (atacando)') : ' (a caminho)'); awayByVillage[key] = awayByVillage[key] || {}; Object.entries(m.troops).forEach(([k, c]) => awayByVillage[key][k] = (awayByVillage[key][k] || 0) + c); });
+  const [mode, setMode] = useState('attack'); const [sel, setSel] = useState({});
+  const away = {}; g.movements.forEach(m => { const key = m.target.name + (m.phase === 'stationed' ? ' (apoio)' : m.mode === 'attack' ? (m.phase === 'back' ? ' (voltando)' : ' (atacando)') : ' (a caminho)'); away[key] = away[key] || {}; Object.entries(m.troops).forEach(([k, c]) => away[key][k] = (away[key][k] || 0) + c); });
   const target = targets.find(t => t.id === tid);
-  const selEntries = Object.entries(sel).filter(([k, v]) => v > 0);
-  const slow = selEntries.length ? Math.min(...selEntries.map(([k]) => TROOPS[k].speed)) : 0;
+  const ents = Object.entries(sel).filter(([k, v]) => v > 0); const slow = ents.length ? Math.min(...ents.map(([k]) => TROOPS[k].speed)) : 0;
   const travel = target && slow ? Math.max(6, Math.round(dist(HOME, target) * 24 / slow)) : 0;
-
-  return (<div>
-    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-      {[['tropas', '🛡️ Tropas'], ['enviar', '📤 Enviar'], ['movimentos', '🧭 Movimentos']].map(([v, l]) => (
-        <button key={v} onClick={() => setView(v)} style={{ ...s.btn(C, view === v ? 'gold' : 'ghost'), flex: 1, padding: 8, fontSize: 12 }}>{l}</button>
-      ))}
-    </div>
-
+  return (<div style={{ color: C.w1 }}>
+    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>{[['tropas', '🛡️ Tropas'], ['enviar', '📤 Enviar'], ['movimentos', '🧭 Movimentos']].map(([v, l]) => <button key={v} onClick={() => setView(v)} style={{ ...st.btn(C, view === v ? 'gold' : 'ghost'), flex: 1, padding: 8, fontSize: 12 }}>{l}</button>)}</div>
     {view === 'tropas' && (<div style={{ fontFamily: 'Georgia, serif' }}>
-      <div style={{ fontSize: 12, color: C.gold, marginBottom: 6 }}>🏠 Em casa</div>
+      <SubTitle C={C}>🏠 Em casa</SubTitle>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 6 }}>
-        {Object.entries(g.troops).filter(([k, c]) => c > 0).length === 0 && <div style={{ fontSize: 12, color: C.sub }}>Nenhuma tropa em casa.</div>}
-        {Object.entries(g.troops).filter(([k, c]) => c > 0).map(([k, c]) => (
-          <div key={k} style={{ background: 'rgba(0,0,0,.2)', border: `1px solid ${C.border}`, borderRadius: 8, padding: 6, fontSize: 12 }}>{TROOPS[k].icon} {TROOPS[k].name}<br /><b style={{ color: C.ink }}>{fmt(c)}</b></div>
-        ))}
+        {Object.entries(g.troops).filter(([k, c]) => c > 0).length === 0 && <div style={{ fontSize: 12, color: '#7a6a4a' }}>Nenhuma tropa em casa.</div>}
+        {Object.entries(g.troops).filter(([k, c]) => c > 0).map(([k, c]) => <div key={k} style={st.card(C)}>{TROOPS[k].icon} {TROOPS[k].name}<br /><b>{fmt(c)}</b></div>)}
       </div>
-      {Object.keys(awayByVillage).length > 0 && (<>
-        <div style={{ fontSize: 12, color: C.gold, margin: '12px 0 6px' }}>🌍 Fora da aldeia</div>
-        {Object.entries(awayByVillage).map(([place, tr]) => (
-          <div key={place} style={{ background: 'rgba(0,0,0,.2)', border: `1px solid ${C.border}`, borderRadius: 8, padding: 8, marginBottom: 6, fontSize: 12 }}>
-            <div style={{ color: C.gold, marginBottom: 2 }}>📍 {place}</div>
-            {Object.entries(tr).map(([k, c]) => `${TROOPS[k].icon} ${fmt(c)} ${TROOPS[k].name}`).join(' · ')}
-          </div>
-        ))}
-      </>)}
+      {Object.keys(away).length > 0 && (<><SubTitle C={C}>🌍 Fora da aldeia</SubTitle>{Object.entries(away).map(([place, tr]) => <div key={place} style={{ ...st.card(C), marginBottom: 6 }}><div style={{ fontWeight: 700, marginBottom: 2 }}>📍 {place}</div>{Object.entries(tr).map(([k, c]) => `${TROOPS[k].icon} ${fmt(c)} ${TROOPS[k].name}`).join(' · ')}</div>)}</>)}
     </div>)}
-
     {view === 'enviar' && (<div style={{ fontFamily: 'Georgia, serif' }}>
-      <div style={{ fontSize: 12, color: C.sub, marginBottom: 4 }}>Alvo (coordenadas):</div>
-      <select value={tid} onChange={e => setTid(parseInt(e.target.value))} style={{ width: '100%', background: '#1a130a', color: C.ink, border: `1px solid ${C.border}`, borderRadius: 6, padding: 8, fontFamily: 'inherit', fontSize: 13, marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: '#7a6a4a', marginBottom: 4 }}>Alvo (coordenadas):</div>
+      <select value={tid} onChange={e => setTid(parseInt(e.target.value))} style={{ width: '100%', background: '#fff', color: C.w1, border: `1px solid ${C.parchD}`, borderRadius: 6, padding: 8, fontFamily: 'inherit', fontSize: 13, marginBottom: 8 }}>
         {targets.map(t => <option key={t.id} value={t.id}>{t.conquered ? '✅ ' : ''}{t.name} ({t.x}|{t.y}) — {t.owner} · {t.diff}</option>)}
       </select>
-      {target && <div style={{ fontSize: 11, color: C.sub, marginBottom: 8 }}>📏 Distância {dist(HOME, target)} · 🛡️ defesa ~{fmt(Object.values(target.troops).reduce((a, b) => a + b, 0))} tropas · 🧱 muralha nv{target.wall} · lealdade {Math.floor(target.loyalty)}%{travel ? ` · ⏱️ viagem ${fmtTime(travel)}` : ''}</div>}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-        <button onClick={() => setMode('attack')} style={{ ...s.btn(C, mode === 'attack' ? 'red' : 'ghost'), flex: 1, padding: 8 }}>⚔️ Atacar</button>
-        <button onClick={() => setMode('support')} style={{ ...s.btn(C, mode === 'support' ? 'blue' : 'ghost'), flex: 1, padding: 8 }}>🛡️ Apoiar</button>
-      </div>
+      {target && <div style={{ fontSize: 11, color: '#7a6a4a', marginBottom: 8 }}>📏 Distância {dist(HOME, target)} · 🛡️ ~{fmt(Object.values(target.troops).reduce((a, b) => a + b, 0))} defensores · 🧱 muralha nv{target.wall} · lealdade {Math.floor(target.loyalty)}%{travel ? ` · ⏱️ ${fmtTime(travel)}` : ''}</div>}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}><button onClick={() => setMode('attack')} style={{ ...st.btn(C, mode === 'attack' ? 'red' : 'ghost'), flex: 1, padding: 8 }}>⚔️ Atacar</button><button onClick={() => setMode('support')} style={{ ...st.btn(C, mode === 'support' ? 'blue' : 'ghost'), flex: 1, padding: 8 }}>🛡️ Apoiar</button></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 6, marginBottom: 8 }}>
-        {Object.entries(g.troops).filter(([k, c]) => c > 0).map(([k, c]) => (
-          <div key={k} style={{ background: 'rgba(0,0,0,.2)', border: `1px solid ${C.border}`, borderRadius: 6, padding: 6 }}>
-            <div style={{ fontSize: 11 }}>{TROOPS[k].icon} {TROOPS[k].name} ({c})</div>
-            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-              <input type="number" min="0" max={c} value={sel[k] || ''} onChange={e => setSel(o => ({ ...o, [k]: Math.min(c, Math.max(0, parseInt(e.target.value) || 0)) }))} placeholder="0" style={{ width: '100%', background: '#1a130a', border: `1px solid ${C.border}`, borderRadius: 4, padding: 4, color: C.ink, fontFamily: 'inherit', fontSize: 12 }} />
-              <button onClick={() => setSel(o => ({ ...o, [k]: c }))} style={{ ...s.btn(C, 'ghost'), padding: '2px 6px', fontSize: 10, width: 'auto' }}>tudo</button>
-            </div>
-          </div>
-        ))}
-        {Object.values(g.troops).every(c => c === 0) && <div style={{ fontSize: 12, color: '#d68f88' }}>Você não tem tropas em casa. Recrute no Quartel/Estábulo.</div>}
+        {Object.entries(g.troops).filter(([k, c]) => c > 0).map(([k, c]) => <div key={k} style={st.card(C)}><div style={{ fontSize: 11 }}>{TROOPS[k].icon} {TROOPS[k].name} ({c})</div><div style={{ display: 'flex', gap: 4, marginTop: 4 }}><input type="number" min="0" max={c} value={sel[k] || ''} onChange={e => setSel(o => ({ ...o, [k]: Math.min(c, Math.max(0, parseInt(e.target.value) || 0)) }))} placeholder="0" style={{ width: '100%', background: '#fff', border: `1px solid ${C.parchD}`, borderRadius: 4, padding: 4, color: C.w1, fontFamily: 'inherit', fontSize: 12 }} /><button onClick={() => setSel(o => ({ ...o, [k]: c }))} style={{ ...st.btn(C, 'ghost'), padding: '2px 6px', fontSize: 10, width: 'auto' }}>tudo</button></div></div>)}
+        {Object.values(g.troops).every(c => c === 0) && <div style={{ fontSize: 12, color: '#a83228' }}>Sem tropas em casa. Recrute no Quartel/Estábulo.</div>}
       </div>
-      <button onClick={() => { p.sendTroops(tid, sel, mode); setSel({}); }} style={{ ...s.btn(C, mode === 'attack' ? 'red' : 'blue'), padding: 11, fontSize: 14 }}>{mode === 'attack' ? '⚔️ Enviar ataque' : '🛡️ Enviar apoio'}</button>
+      <button onClick={() => { p.sendTroops(tid, sel, mode); setSel({}); }} style={{ ...st.btn(C, mode === 'attack' ? 'red' : 'blue'), padding: 11, fontSize: 14 }}>{mode === 'attack' ? '⚔️ Enviar ataque' : '🛡️ Enviar apoio'}</button>
     </div>)}
-
     {view === 'movimentos' && (<div style={{ fontFamily: 'Georgia, serif', fontSize: 12 }}>
-      {g.movements.length === 0 && <div style={{ color: C.sub }}>Nenhum movimento ativo.</div>}
-      {g.movements.map(m => (
-        <div key={m.id} style={{ background: 'rgba(0,0,0,.2)', border: `1px solid ${C.border}`, borderRadius: 8, padding: 8, marginBottom: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: C.gold }}>{m.phase === 'stationed' ? '🛡️ Apoiando' : m.mode === 'attack' ? (m.phase === 'back' ? '🏠 Voltando de' : '⚔️ Atacando') : '🛡️ Apoio a'} {m.target.name}</span>
-            {m.phase !== 'stationed' && <span style={{ color: C.sub }}>{fmtTime(m.left)}</span>}
-          </div>
-          <div style={{ color: C.sub, marginTop: 2 }}>{Object.entries(m.troops).map(([k, c]) => `${TROOPS[k].icon}${fmt(c)}`).join(' ')}</div>
-          {m.phase === 'stationed' && <button onClick={() => p.recall(m.id)} style={{ ...s.btn(C, 'ghost'), padding: 6, fontSize: 11, marginTop: 4 }}>↩️ Trazer de volta</button>}
-        </div>
-      ))}
-      {g.reports.length > 0 && (<>
-        <div style={{ color: C.gold, margin: '12px 0 6px' }}>📜 Relatórios</div>
-        {g.reports.slice(0, 6).map(r => (
-          <button key={r.id} onClick={() => p.setReport(r)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'rgba(0,0,0,.2)', border: `1px solid ${r.win ? C.greenB : C.redB}`, borderRadius: 8, padding: 8, marginBottom: 4, color: C.ink, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>
-            {r.win ? (r.conquered ? '👑' : '🏆') : '💀'} {r.name} — toque para ver
-          </button>
-        ))}
-      </>)}
+      {g.movements.length === 0 && <div style={{ color: '#7a6a4a' }}>Nenhum movimento ativo.</div>}
+      {g.movements.map(m => <div key={m.id} style={{ ...st.card(C), marginBottom: 6 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontWeight: 700 }}>{m.phase === 'stationed' ? '🛡️ Apoiando' : m.mode === 'attack' ? (m.phase === 'back' ? '🏠 Voltando de' : '⚔️ Atacando') : '🛡️ Apoio a'} {m.target.name}</span>{m.phase !== 'stationed' && <span>{fmtTime(m.left)}</span>}</div><div style={{ color: '#7a6a4a', marginTop: 2 }}>{Object.entries(m.troops).map(([k, c]) => `${TROOPS[k].icon}${fmt(c)}`).join(' ')}</div>{m.phase === 'stationed' && <button onClick={() => p.recall(m.id)} style={{ ...st.btn(C, 'ghost'), padding: 6, fontSize: 11, marginTop: 4 }}>↩️ Trazer de volta</button>}</div>)}
+      {g.reports.length > 0 && (<><SubTitle C={C}>📜 Relatórios</SubTitle>{g.reports.slice(0, 6).map(r => <button key={r.id} onClick={() => p.setReport(r)} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: `1px solid ${r.win ? C.greenB : C.redB}`, borderRadius: 8, padding: 8, marginBottom: 4, color: C.w1, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>{r.win ? (r.conquered ? '👑' : '🏆') : '💀'} {r.name} — toque para ver</button>)}</>)}
     </div>)}
   </div>);
 }
 
-/* ---------- COMPONENTES BASE ---------- */
-function Modal({ C, title, subtitle, onClose, children }) {
+/* ---------- HUB DE RECRUTAMENTO ---------- */
+function RecruitHub(p) {
+  const { C, L } = p;
+  const blds = [['barracks', '🎖️', 'Quartel', 'Infantaria'], ['stable', '🐴', 'Estábulo', 'Cavalaria'], ['workshop', '🔨', 'Oficina', 'Cerco'], ['church', '⛪', 'Igreja', 'Sacerdotes']];
+  return (<Panel C={C} title="⚔️ Recrutamento" sub="Escolha onde treinar" onBack={() => p.setScreen('village')}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 8 }}>
+      {blds.map(([k, ic, nm, sub]) => (<button key={k} onClick={() => p.setScreen(k)} style={{ background: L[k] > 0 ? '#fff' : '#e4d6b4', border: `1px solid ${C.parchD}`, borderRadius: 10, padding: 14, cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit', color: C.w1 }}>
+        <div style={{ fontSize: 30 }}>{ic}</div><div style={{ fontWeight: 700, marginTop: 4 }}>{nm}</div><div style={{ fontSize: 11, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>{sub}{L[k] === 0 ? ' · não construído' : ` · nível ${L[k]}`}</div></button>))}
+    </div>
+  </Panel>);
+}
+
+/* ---------- MAPA ---------- */
+function MapScreen(p) {
+  const { C, targets } = p;
+  const colorOf = (t) => t.conquered ? '#5e8a3e' : t.diff === 'fraco' ? '#9aa0a6' : t.diff === 'médio' ? '#caa53a' : '#a0463e';
+  return (<Panel C={C} title="🗺️ Mapa do Mundo" sub="Sua aldeia ao centro · clique para enviar tropas" onBack={() => p.setScreen('village')}>
+    <div style={{ position: 'relative', width: '100%', paddingBottom: '70%', background: 'radial-gradient(circle at 50% 50%, #5b8f3c, #2f5320)', borderRadius: 10, border: `2px solid ${C.border}`, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px)', backgroundSize: '8% 8%' }} />
+      {/* sua aldeia */}
+      <Dot x={50} y={50} color="#3b82f6" label="Você" big />
+      {targets.map(t => { const dx = 50 + (t.x - HOME.x) * 2.2, dy = 50 + (t.y - HOME.y) * 2.2; return <Dot key={t.id} x={dx} y={dy} color={colorOf(t)} label={`${t.name} (${t.x}|${t.y})`} onClick={() => { p.setScreen('command'); p.flash('Vá em 📤 Enviar e escolha o alvo.'); }} />; })}
+    </div>
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 10, fontSize: 12, fontFamily: 'Georgia, serif', color: C.w1 }}>
+      <Legend c="#3b82f6" t="Você" /><Legend c="#9aa0a6" t="Bárbaro fraco" /><Legend c="#caa53a" t="Médio" /><Legend c="#a0463e" t="Forte" /><Legend c="#5e8a3e" t="Conquistada" />
+    </div>
+    <div style={{ marginTop: 10, fontSize: 11, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>💡 No multiplayer real, aqui apareceriam as aldeias de outros jogadores e tribos, cada uma com sua cor (aliado, inimigo, tribo).</div>
+  </Panel>);
+}
+function Dot({ x, y, color, label, big, onClick }) {
+  const [h, setH] = useState(false);
+  return (<div onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', cursor: onClick ? 'pointer' : 'default', zIndex: h ? 10 : 1 }}>
+    <div style={{ width: big ? 16 : 11, height: big ? 16 : 11, borderRadius: '50%', background: color, border: '2px solid #fff', boxShadow: `0 0 ${h || big ? 10 : 4}px ${color}` }} />
+    {(h || big) && <div style={{ position: 'absolute', bottom: '150%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(20,14,8,.95)', color: '#efe3c8', border: `1px solid ${color}`, borderRadius: 6, padding: '3px 7px', fontSize: 10.5, whiteSpace: 'nowrap', fontFamily: 'Georgia, serif' }}>{label}</div>}
+  </div>);
+}
+function Legend({ c, t }) { return <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: '50%', background: c, display: 'inline-block' }} />{t}</span>; }
+
+/* ---------- RELATÓRIOS ---------- */
+function ReportsScreen(p) {
+  const { C, g } = p;
+  return (<Panel C={C} title="📜 Relatórios" sub="Resultados das suas batalhas" onBack={() => p.setScreen('village')}>
+    {g.reports.length === 0 ? <div style={st.lock(C)}>Nenhuma batalha ainda. Ataque uma aldeia no Centro de Comando!</div> : g.reports.map(r => (
+      <button key={r.id} onClick={() => p.setReport(r)} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: `1px solid ${r.win ? C.greenB : C.redB}`, borderRadius: 8, padding: 10, marginBottom: 6, color: C.w1, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: 13 }}>
+        <b>{r.win ? (r.conquered ? '👑 Conquista' : '🏆 Vitória') : '💀 Derrota'}</b> — {r.name}<br /><span style={{ fontSize: 11, color: '#7a6a4a' }}>⚔️ {fmt(r.atk)} vs 🛡️ {fmt(r.def)} · toque para detalhes</span>
+      </button>))}
+  </Panel>);
+}
+
+/* ---------- CLASSIFICAÇÃO ---------- */
+function RankingScreen(p) {
+  const { C, g } = p;
+  const myPts = Object.entries(g.levels).reduce((s, [k, l]) => s + l * 25, 0) + Object.values(g.troops).reduce((a, b) => a + b, 0) * 3 + g.conquered * 500;
+  const fake = [['Lorde Valdric', 9200], ['Senhor das Cinzas', 7400], ['Você', myPts], ['Cavaleiro Edrik', 5100], ['Dama Sirin', 4200], ['Bárbaro Krug', 2600]].sort((a, b) => b[1] - a[1]);
+  return (<Panel C={C} title="🏆 Classificação" sub="Ranking de jogadores" onBack={() => p.setScreen('village')}>
+    {fake.map(([nm, pts], i) => (<div key={nm} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 4, fontFamily: 'Georgia, serif', background: nm === 'Você' ? 'rgba(212,175,55,.25)' : '#fff', border: `1px solid ${nm === 'Você' ? C.gold : C.parchD}`, color: C.w1 }}>
+      <span style={{ fontWeight: 700, width: 24, color: i === 0 ? '#caa53a' : C.w1 }}>{i + 1}º</span><span style={{ flex: 1, fontWeight: nm === 'Você' ? 700 : 400 }}>{nm}</span><span style={{ color: '#7a6a4a' }}>{fmt(pts)} pts</span>
+    </div>))}
+    <div style={{ marginTop: 10, fontSize: 11, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>💡 No multiplayer real, este ranking seria de jogadores e tribos de verdade, atualizado para todos. Por enquanto os outros nomes são exemplos.</div>
+  </Panel>);
+}
+
+/* ---------- PERFIL ---------- */
+function ProfileScreen(p) {
+  const { C, g } = p;
+  const totalTroops = Object.values(g.troops).reduce((a, b) => a + b, 0);
+  return (<Panel C={C} title="👤 Perfil" sub="Rgarrucho" onBack={() => p.setScreen('village')}>
+    <div style={{ fontFamily: 'Georgia, serif', color: C.w1 }}>
+      <Row k="🏰 Aldeias" v={fmt(1 + g.conquered)} C={C} /><Row k="⚔️ Tropas (em casa)" v={fmt(totalTroops)} C={C} /><Row k="🏆 Conquistas" v={fmt(g.conquered)} C={C} /><Row k="📜 Batalhas" v={fmt(g.reports.length)} C={C} />
+    </div>
+    <div style={{ marginTop: 10, fontSize: 11, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>💡 Conta, avatar e brasão da tribo entram com o modo multiplayer.</div>
+  </Panel>);
+}
+/* ---------- TRIBO: CHAT MODERNO (estilo WhatsApp) ---------- */
+const TRIBE_MEMBERS = [
+  { name: 'Valdric', avatar: '🛡️', role: 'Líder', color: '#caa53a', online: true },
+  { name: 'Sirin', avatar: '🏹', role: 'Diplomata', color: '#3f7186', online: true },
+  { name: 'Edrik', avatar: '⚔️', role: 'General', color: '#a0463e', online: true },
+  { name: 'Krug', avatar: '🪓', role: 'Membro', color: '#5e8a3e', online: false },
+  { name: 'Mira', avatar: '🐴', role: 'Membro', color: '#9a6ab0', online: true }
+];
+const CANNED = [
+  'Boa! Tô montando defesa aqui também.',
+  'Alguém tem trigo sobrando? Tô recrutando pesado.',
+  'Cuidado com o Forte Negro, mandaram espião ontem.',
+  'Conta comigo no ataque 💪',
+  'Já subi minha muralha pro nível 10, tá osso de invadir agora.',
+  'Vou mandar apoio pra sua aldeia, segura aí.',
+  'Quem tá online pra um ataque coordenado?',
+  'Boa jogada! 🔥'
+];
+const now = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+function TribeChat(p) {
+  const { C, targets } = p;
+  const [view, setView] = useState('chat'); // chat | membros
+  const [msgs, setMsgs] = useState(() => {
+    try { const s = localStorage.getItem('rcV3chat'); if (s) return JSON.parse(s); } catch {}
+    return [
+      { id: 1, who: 'Valdric', text: 'Bem-vindo à tribo, guerreiro! ⚔️ Aqui a gente coordena ataque e defesa.', t: '09:14' },
+      { id: 2, who: 'Sirin', text: 'Se precisar de recursos, é só pedir no chat 🙂', t: '09:15' },
+      { id: 3, who: 'Edrik', text: 'Tô de olho nos bárbaros do leste. Logo organizo um ataque em grupo.', t: '09:20' }
+    ];
+  });
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(null);
+  const [share, setShare] = useState(false);
+  const [shareTid, setShareTid] = useState(targets[0]?.id);
+  const [shareTime, setShareTime] = useState('20:00');
+  const endRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem('rcV3chat', JSON.stringify(msgs.slice(-60))); } catch {} }, [msgs]);
+  useEffect(() => { if (endRef.current) endRef.current.scrollIntoView({ behavior: 'smooth' }); }, [msgs, typing]);
+
+  const memberOf = (name) => TRIBE_MEMBERS.find(m => m.name === name);
+  const onlineCount = TRIBE_MEMBERS.filter(m => m.online).length;
+
+  const reply = () => {
+    const online = TRIBE_MEMBERS.filter(m => m.online);
+    const m = online[Math.floor(Math.random() * online.length)];
+    setTyping(m.name);
+    setTimeout(() => {
+      setTyping(null);
+      setMsgs(prev => [...prev, { id: Date.now() + Math.random(), who: m.name, text: CANNED[Math.floor(Math.random() * CANNED.length)], t: now() }]);
+    }, 1400 + Math.random() * 1200);
+  };
+  const send = () => {
+    const text = input.trim(); if (!text) return;
+    setMsgs(prev => [...prev, { id: Date.now() + Math.random(), who: 'Você', text, t: now() }]);
+    setInput('');
+    if (Math.random() < 0.85) setTimeout(reply, 600);
+  };
+  const sendCoord = () => {
+    const tg = targets.find(t => t.id === shareTid); if (!tg) return;
+    setMsgs(prev => [...prev, { id: Date.now() + Math.random(), who: 'Você', t: now(), coord: { name: tg.name, x: tg.x, y: tg.y, time: shareTime, joined: ['Você'] } }]);
+    setShare(false);
+    setTimeout(reply, 700);
+  };
+  const join = (id) => setMsgs(prev => prev.map(m => m.id === id && m.coord && !m.coord.joined.includes('Você') ? { ...m, coord: { ...m.coord, joined: [...m.coord.joined, 'Você'] } } : m));
+
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.78)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80, padding: 12 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'linear-gradient(#221a0f,#191309)', border: `2px solid ${C.gold}`, borderRadius: 14, padding: 16, maxWidth: 560, width: '100%', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,.7)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <div><div style={{ fontSize: 18, fontWeight: 700, color: C.gold, letterSpacing: '.5px' }}>{title}</div>
-            <div style={{ fontSize: 12, color: C.sub, fontFamily: 'Georgia, serif' }}>{subtitle}</div></div>
-          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.sub, borderRadius: 6, padding: '2px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+    <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `2px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>
+      {/* cabeçalho do chat */}
+      <div style={{ background: `linear-gradient(${C.w2}, ${C.w1})`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `2px solid ${C.border}` }}>
+        <button onClick={() => p.setScreen('village')} style={{ background: 'transparent', border: `1px solid ${C.border}`, color: C.sub, borderRadius: 8, padding: '6px 9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>←</button>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'radial-gradient(circle at 30% 30%, #caa53a, #7a5a14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, border: `2px solid ${C.gold}` }}>⚜️</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.gold, letterSpacing: .5 }}>Ordem do Corvo</div>
+          <div style={{ fontSize: 11, color: '#7ec77e', fontFamily: 'Georgia, serif' }}>🟢 {onlineCount} online · {TRIBE_MEMBERS.length} membros</div>
         </div>
-        {children}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[['chat', '💬'], ['membros', '👥']].map(([v, ic]) => <button key={v} onClick={() => setView(v)} style={{ background: view === v ? 'rgba(212,175,55,.2)' : 'transparent', border: `1px solid ${view === v ? C.gold : 'transparent'}`, color: view === v ? C.gold : C.sub, borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 15 }}>{ic}</button>)}
+        </div>
       </div>
+
+      {view === 'membros' ? (
+        <div style={{ padding: 12 }}>
+          {TRIBE_MEMBERS.map(m => (
+            <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', borderBottom: `1px solid ${C.parchD}`, fontFamily: 'Georgia, serif' }}>
+              <div style={{ position: 'relative' }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{m.avatar}</div>
+                <span style={{ position: 'absolute', right: -1, bottom: -1, width: 11, height: 11, borderRadius: '50%', background: m.online ? '#2ecc71' : '#888', border: '2px solid #e7d9b8' }} />
+              </div>
+              <div style={{ flex: 1, color: C.w1 }}><div style={{ fontWeight: 700 }}>{m.name}{m.name === 'Você' ? '' : ''}</div><div style={{ fontSize: 11, color: '#7a6a4a' }}>{m.role} · {m.online ? 'online' : 'offline'}</div></div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', fontFamily: 'Georgia, serif' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🤴</div>
+            <div style={{ flex: 1, color: C.w1 }}><div style={{ fontWeight: 700 }}>Você</div><div style={{ fontSize: 11, color: '#7a6a4a' }}>Membro · online</div></div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* mensagens */}
+          <div style={{ height: 380, overflowY: 'auto', padding: 12, background: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.012) 0 2px, transparent 2px 14px), #ded0ad' }}>
+            <div style={{ textAlign: 'center', margin: '2px 0 10px' }}><span style={{ background: 'rgba(0,0,0,.12)', color: '#5a4426', fontSize: 11, padding: '2px 10px', borderRadius: 10, fontFamily: 'Georgia, serif' }}>Hoje</span></div>
+            {msgs.map(m => {
+              const mine = m.who === 'Você'; const mem = memberOf(m.who);
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 8 }}>
+                  {!mine && <div style={{ width: 30, height: 30, borderRadius: '50%', background: mem?.color || '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, marginRight: 6, flexShrink: 0 }}>{mem?.avatar || '❔'}</div>}
+                  <div style={{ maxWidth: '78%', background: mine ? '#dcf2c8' : '#fff', border: `1px solid ${mine ? '#bfe3a0' : '#e3d4ad'}`, borderRadius: 12, borderTopLeftRadius: mine ? 12 : 3, borderTopRightRadius: mine ? 3 : 12, padding: '7px 10px', fontFamily: 'Georgia, serif', boxShadow: '0 1px 2px rgba(0,0,0,.12)' }}>
+                    {!mine && <div style={{ fontSize: 11.5, fontWeight: 700, color: mem?.color || '#555', marginBottom: 2 }}>{m.who} <span style={{ fontWeight: 400, color: '#999' }}>· {mem?.role}</span></div>}
+                    {m.coord ? (
+                      <div style={{ background: 'rgba(160,70,62,.08)', border: '1px solid #d8a59e', borderRadius: 8, padding: 8, minWidth: 200 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#7c2820' }}>⚔️ Ataque coordenado</div>
+                        <div style={{ fontSize: 12.5, color: '#3a2c1b', margin: '3px 0' }}>🎯 {m.coord.name} ({m.coord.x}|{m.coord.y})</div>
+                        <div style={{ fontSize: 12.5, color: '#3a2c1b' }}>🕐 Horário: {m.coord.time}</div>
+                        <div style={{ fontSize: 11, color: '#5a4426', margin: '4px 0' }}>✅ {m.coord.joined.length} confirmados: {m.coord.joined.join(', ')}</div>
+                        {!m.coord.joined.includes('Você') && <button onClick={() => join(m.id)} style={{ width: '100%', background: 'linear-gradient(#7c2820,#5e1d17)', color: '#fff', border: '1px solid #a0463e', borderRadius: 6, padding: 6, cursor: 'pointer', fontFamily: "'Cinzel',Georgia,serif", fontWeight: 700, fontSize: 12 }}>Vou participar</button>}
+                      </div>
+                    ) : <div style={{ fontSize: 13.5, color: '#2a2218', lineHeight: 1.4 }}>{m.text}</div>}
+                    <div style={{ fontSize: 10, color: '#9a8e72', textAlign: 'right', marginTop: 2 }}>{m.t}{mine ? ' ✓✓' : ''}</div>
+                  </div>
+                </div>
+              );
+            })}
+            {typing && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Georgia, serif', fontSize: 12, color: '#5a4426', marginLeft: 36 }}><span style={{ fontStyle: 'italic' }}>{typing} está digitando…</span></div>}
+            <div ref={endRef} />
+          </div>
+
+          {/* compartilhar coordenação */}
+          {share && (
+            <div style={{ background: '#efe1c0', borderTop: `1px solid ${C.parchD}`, padding: 10, fontFamily: 'Georgia, serif' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.w1, marginBottom: 6 }}>⚔️ Convocar ataque coordenado</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <select value={shareTid} onChange={e => setShareTid(parseInt(e.target.value))} style={{ flex: '1 1 160px', background: '#fff', border: `1px solid ${C.parchD}`, borderRadius: 6, padding: 7, color: C.w1, fontFamily: 'inherit', fontSize: 13 }}>
+                  {targets.map(t => <option key={t.id} value={t.id}>{t.name} ({t.x}|{t.y})</option>)}
+                </select>
+                <input value={shareTime} onChange={e => setShareTime(e.target.value)} style={{ width: 80, background: '#fff', border: `1px solid ${C.parchD}`, borderRadius: 6, padding: 7, color: C.w1, fontFamily: 'inherit', fontSize: 13 }} />
+                <button onClick={sendCoord} style={{ background: 'linear-gradient(#7c2820,#5e1d17)', color: '#fff', border: '1px solid #a0463e', borderRadius: 6, padding: '7px 12px', cursor: 'pointer', fontFamily: "'Cinzel',Georgia,serif", fontWeight: 700, fontSize: 12 }}>Enviar</button>
+              </div>
+            </div>
+          )}
+
+          {/* barra de digitar */}
+          <div style={{ display: 'flex', gap: 6, padding: 10, background: `linear-gradient(${C.w2}, ${C.w1})`, borderTop: `2px solid ${C.border}` }}>
+            <button onClick={() => setShare(s => !s)} title="Convocar ataque" style={{ background: share ? C.gold : 'rgba(0,0,0,.25)', color: share ? '#1a1208' : C.gold, border: `1px solid ${C.border}`, borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', fontSize: 18, flexShrink: 0 }}>⚔️</button>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send(); }} placeholder="Mensagem para a tribo…" style={{ flex: 1, background: '#f3e8cc', border: `1px solid ${C.border}`, borderRadius: 20, padding: '0 16px', color: '#2a2218', fontFamily: 'Georgia, serif', fontSize: 14, outline: 'none' }} />
+            <button onClick={send} style={{ background: 'radial-gradient(circle at 30% 30%, #6db04f, #3d5a2d)', color: '#fff', border: `1px solid ${C.greenB}`, borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', fontSize: 18, flexShrink: 0 }}>➤</button>
+          </div>
+        </>
+      )}
+      <div style={{ padding: '8px 12px', fontSize: 11, color: '#7a6a4a', fontFamily: 'Georgia, serif', background: C.parchD }}>💡 Chat ao vivo entre jogadores reais entra com o modo multiplayer (servidor). Por enquanto os membros são simulados — mas a interface e a coordenação de ataque já funcionam.</div>
     </div>
   );
 }
-function Res({ icon, val, cap, color }) {
-  const pct = Math.min(100, (val / cap) * 100);
-  return (<div style={{ background: 'rgba(0,0,0,.3)', border: '1px solid #5a4426', borderRadius: 8, padding: '4px 10px', minWidth: 92, position: 'relative', overflow: 'hidden' }}>
-    <div style={{ position: 'absolute', bottom: 0, left: 0, height: 3, width: `${pct}%`, background: pct > 95 ? '#d0453a' : color }} />
-    <div style={{ fontSize: 13, fontWeight: 'bold' }}>{icon} {Math.floor(val).toLocaleString('pt-BR')}</div>
+
+function PreviewScreen({ C, icon, title, text, onBack }) {
+  return (<Panel C={C} title={`${icon} ${title}`} sub="Prévia" onBack={onBack}><div style={{ fontFamily: 'Georgia, serif', color: C.w1, fontSize: 13, lineHeight: 1.6 }}>{text}</div></Panel>);
+}
+
+/* ---------- BASE ---------- */
+function Panel({ C, title, sub, onBack, children }) {
+  return (<div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `2px solid ${C.border}`, borderRadius: 14, padding: 16, boxShadow: '0 6px 20px rgba(0,0,0,.5)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, borderBottom: `2px solid ${C.parchD}`, paddingBottom: 10 }}>
+      {onBack && <button onClick={onBack} style={{ background: C.w2, color: C.ink, border: `1px solid ${C.border}`, borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>← Aldeia</button>}
+      <div><div style={{ fontSize: 18, fontWeight: 700, color: C.w1, letterSpacing: .5 }}>{title}</div><div style={{ fontSize: 12, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>{sub}</div></div>
+    </div>
+    {children}
   </div>);
 }
+function Modal({ C, title, subtitle, onClose, children }) {
+  return (<div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.78)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80, padding: 12 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `2px solid ${C.gold}`, borderRadius: 14, padding: 16, maxWidth: 460, width: '100%', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,.7)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}><div><div style={{ fontSize: 18, fontWeight: 700, color: C.w1 }}>{title}</div><div style={{ fontSize: 12, color: '#7a6a4a', fontFamily: 'Georgia, serif' }}>{subtitle}</div></div><button onClick={onClose} style={{ background: C.w2, border: `1px solid ${C.border}`, color: C.ink, borderRadius: 6, padding: '2px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button></div>
+      {children}
+    </div>
+  </div>);
+}
+function Res({ icon, val, cap, color, rate }) {
+  const pct = Math.min(100, (val / cap) * 100);
+  return (<div title={`+${fmt(rate)}/h`} style={{ background: 'rgba(0,0,0,.3)', border: '1px solid #5a4426', borderRadius: 8, padding: '4px 10px', minWidth: 92, position: 'relative', overflow: 'hidden' }}><div style={{ position: 'absolute', bottom: 0, left: 0, height: 3, width: `${pct}%`, background: pct > 95 ? '#d0453a' : color }} /><div style={{ fontSize: 13, fontWeight: 'bold' }}>{icon} {Math.floor(val).toLocaleString('pt-BR')}</div></div>);
+}
 function Pill({ C, children }) { return <span style={{ background: 'rgba(0,0,0,.3)', border: `1px solid ${C.border}`, borderRadius: 14, padding: '4px 10px', color: C.ink }}>{children}</span>; }
+function SubTitle({ C, children }) { return <div style={{ fontSize: 13, fontWeight: 700, color: C.w1, margin: '12px 0 6px' }}>{children}</div>; }
+function Row({ k, v, C }) { return <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.parchD}` }}><span>{k}</span><b style={{ color: C.w1 }}>{v}</b></div>; }
 
-const s = {
-  desc: (C) => ({ fontSize: 12.5, color: C.ink, lineHeight: 1.5, fontFamily: 'Georgia, serif', margin: '0 0 10px' }),
-  lock: (C) => ({ background: 'rgba(220,38,38,.12)', borderRadius: 8, padding: 12, textAlign: 'center', fontSize: 12, color: '#d68f88', fontFamily: 'Georgia, serif' }),
-  maxed: (C) => ({ marginTop: 12, textAlign: 'center', padding: 10, background: 'rgba(212,175,55,.15)', borderRadius: 8, color: C.gold, fontSize: 13 }),
-  btn: (C, kind) => {
-    const m = {
-      green: { bg: `linear-gradient(${C.green},#2d4521)`, bd: C.greenB, col: C.ink },
-      red: { bg: `linear-gradient(${C.red},#5e1d17)`, bd: C.redB, col: C.ink },
-      blue: { bg: `linear-gradient(${C.blue},#1d3744)`, bd: C.blueB, col: C.ink },
-      gold: { bg: C.gold, bd: C.gold, col: '#1a1208' },
-      ghost: { bg: 'transparent', bd: C.border, col: C.sub },
-      off: { bg: '#241a0c', bd: C.border, col: '#6b5d3f' }
-    }[kind];
-    return { width: '100%', padding: 9, borderRadius: 8, border: `1px solid ${m.bd}`, background: m.bg, color: m.col, cursor: kind === 'off' ? 'not-allowed' : 'pointer', fontFamily: "'Cinzel', Georgia, serif", fontWeight: 700, fontSize: 13, letterSpacing: '.3px' };
-  }
+const st = {
+  desc: (C) => ({ fontSize: 12.5, color: C.w1, lineHeight: 1.5, fontFamily: 'Georgia, serif', margin: '0 0 10px' }),
+  lock: (C) => ({ background: 'rgba(160,70,62,.12)', border: `1px solid ${C.parchD}`, borderRadius: 8, padding: 12, textAlign: 'center', fontSize: 12, color: '#a83228', fontFamily: 'Georgia, serif' }),
+  maxed: (C) => ({ marginTop: 14, textAlign: 'center', padding: 10, background: 'rgba(212,175,55,.2)', borderRadius: 8, color: '#8a6a14', fontSize: 13, fontWeight: 700 }),
+  info: (C) => ({ background: 'rgba(0,0,0,.05)', border: `1px solid ${C.parchD}`, borderRadius: 8, padding: 10, fontFamily: 'Georgia, serif', fontSize: 13, color: C.w1 }),
+  card: (C, done) => ({ background: done ? 'rgba(94,138,62,.18)' : '#fff', border: `1px solid ${done ? C.greenB : C.parchD}`, borderRadius: 8, padding: 8, fontFamily: 'Georgia, serif', fontSize: 12, color: C.w1 }),
+  btn: (C, kind) => { const m = { green: { bg: `linear-gradient(${C.green},#2d4521)`, bd: C.greenB, col: '#fff' }, red: { bg: `linear-gradient(${C.red},#5e1d17)`, bd: C.redB, col: '#fff' }, blue: { bg: `linear-gradient(${C.blue},#1d3744)`, bd: C.blueB, col: '#fff' }, gold: { bg: C.gold, bd: C.gold, col: '#1a1208' }, ghost: { bg: 'rgba(0,0,0,.05)', bd: C.parchD, col: '#5a4426' }, off: { bg: '#cbb88f', bd: C.parchD, col: '#8a7a58' } }[kind]; return { width: '100%', padding: 9, borderRadius: 8, border: `1px solid ${m.bd}`, background: m.bg, color: m.col, cursor: kind === 'off' ? 'not-allowed' : 'pointer', fontFamily: "'Cinzel', Georgia, serif", fontWeight: 700, fontSize: 13, letterSpacing: .3 }; }
 };
-
-
-
-

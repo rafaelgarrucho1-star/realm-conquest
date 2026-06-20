@@ -220,6 +220,7 @@ export default function App() {
 
       {/* ===== TELAS ===== */}
       {screen === 'village' && <VillageScreen {...shared} />}
+      {screen.startsWith('building_') && <BuildingPage {...shared} g={{ ...g, currentBuilding: screen.replace('building_', '') }} />}
       {screen === 'mapa' && <MapScreen {...shared} />}
       {screen === 'missions' && <MissionsScreen {...shared} />}
       {screen === 'recrutar' && <RecruitScreen {...shared} />}
@@ -238,17 +239,17 @@ export default function App() {
 
 /* ===== TELA VILLAGE (PRINCIPAL) ===== */
 function VillageScreen(p) {
-  const { g, L, C, popUsed, popMax, upgrade, setScreen, setTooltip, tooltip } = p;
+  const { g, L, C, popUsed, popMax, setScreen, tooltip, setTooltip } = p;
   const whCap = warehouseCap(L.warehouse);
 
   return (
-    <div style={{ display: 'flex', gap: 16, padding: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-      {/* ALDEIA À ESQUERDA */}
-      <div style={{ flex: '1 1 600px', minWidth: 300, background: '#4a7a30', border: `3px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 6px 20px rgba(0,0,0,.4)' }}>
-        <svg viewBox="0 0 1000 700" style={{ display: 'block', width: '100%', background: `linear-gradient(${C.parch}, ${C.parchD})` }}>
+    <div style={{ display: 'flex', gap: 0, padding: 0, height: 'calc(100vh - 150px)', overflow: 'hidden' }}>
+      {/* ALDEIA GIGANTE À ESQUERDA (70%) */}
+      <div style={{ flex: '0 0 70%', background: '#4a7a30', borderRight: `3px solid ${C.border}`, overflow: 'auto' }}>
+        <svg viewBox="0 0 1000 700" style={{ display: 'block', width: '100%', height: '100%', minHeight: 500 }}>
           {/* Grama */}
           <ellipse cx="500" cy="350" rx="478" ry="252" fill="#34571f" />
-          <ellipse cx="500" cy="342" rx="458" ry="238" fill={`url(#grass)`} />
+          <ellipse cx="500" cy="342" rx="458" ry="238" fill="url(#grass)" />
           <defs>
             <radialGradient id="grass" cx="50%" cy="40%">
               <stop offset="0%" stopColor="#5a9a3a" />
@@ -258,28 +259,76 @@ function VillageScreen(p) {
           <ellipse cx="330" cy="280" rx="130" ry="58" fill="rgba(255,255,255,0.06)" />
           <ellipse cx="660" cy="430" rx="150" ry="64" fill="rgba(0,0,0,0.08)" />
 
-          {/* Prédios com TOOLTIPS */}
+          {/* PRÉDIOS CLICÁVEIS */}
           {Object.entries(BUILDINGS).map(([bid, b]) => {
             if (!b.viz || !b.viz.cx) return null;
             const lvl = L[bid] || 0;
             const isHovered = tooltip === bid;
             return (
-              <g key={bid} onMouseEnter={() => setTooltip(bid)} onMouseLeave={() => setTooltip(null)} style={{ cursor: 'pointer' }} onClick={() => setScreen(bid)}>
+              <g 
+                key={bid} 
+                onMouseEnter={() => setTooltip(bid)} 
+                onMouseLeave={() => setTooltip(null)} 
+                onClick={() => setScreen(`building_${bid}`)}
+                style={{ cursor: 'pointer' }}
+              >
                 {/* Sombra */}
                 <ellipse cx={b.viz.cx} cy={b.viz.cy + 8} rx={b.viz.s * 40} ry={b.viz.s * 24} fill="rgba(0,0,0,0.25)" />
-                {/* Prédio SVG simplificado */}
-                <rect x={b.viz.cx - b.viz.s * 30} y={b.viz.cy - b.viz.s * (b.viz.h || 40)} width={b.viz.s * 60} height={b.viz.s * (b.viz.h || 40)} fill={b.viz.pal?.l || '#caa15f'} stroke={b.viz.pal?.d || '#9a7340'} strokeWidth="2" rx="4" />
-                <polygon points={`${b.viz.cx - b.viz.s * 30},${b.viz.cy - b.viz.s * (b.viz.h || 40)} ${b.viz.cx},${b.viz.cy - b.viz.s * ((b.viz.h || 40) + (b.viz.roofH || 20))} ${b.viz.cx + b.viz.s * 30},${b.viz.cy - b.viz.s * (b.viz.h || 40)}`} fill={b.viz.pal?.rl || '#8a3b2f'} />
-                {/* Nível do prédio */}
-                <circle cx={b.viz.cx} cy={b.viz.cy - b.viz.s * (b.viz.h || 40) - 15} r="18" fill="rgba(0,0,0,0.8)" />
-                <text x={b.viz.cx} y={b.viz.cy - b.viz.s * (b.viz.h || 40) - 8} textAnchor="middle" fontSize="16" fill="#fff" fontWeight="700">{lvl}</text>
-                {/* TOOLTIP */}
+                
+                {/* Prédio */}
+                <rect 
+                  x={b.viz.cx - b.viz.s * 30} 
+                  y={b.viz.cy - b.viz.s * (b.viz.h || 40)} 
+                  width={b.viz.s * 60} 
+                  height={b.viz.s * (b.viz.h || 40)} 
+                  fill={b.viz.pal?.l || '#caa15f'} 
+                  stroke={b.viz.pal?.d || '#9a7340'} 
+                  strokeWidth="2" 
+                  rx="4"
+                />
+                
+                {/* Telhado */}
+                <polygon 
+                  points={`${b.viz.cx - b.viz.s * 30},${b.viz.cy - b.viz.s * (b.viz.h || 40)} ${b.viz.cx},${b.viz.cy - b.viz.s * ((b.viz.h || 40) + (b.viz.roofH || 20))} ${b.viz.cx + b.viz.s * 30},${b.viz.cy - b.viz.s * (b.viz.h || 40)}`} 
+                  fill={b.viz.pal?.rl || '#8a3b2f'} 
+                />
+                
+                {/* Nível — DESTACADO */}
+                <circle 
+                  cx={b.viz.cx} 
+                  cy={b.viz.cy - b.viz.s * (b.viz.h || 40) - 15} 
+                  r="18" 
+                  fill="rgba(0,0,0,0.85)" 
+                  stroke={C.gold}
+                  strokeWidth="2"
+                />
+                <text 
+                  x={b.viz.cx} 
+                  y={b.viz.cy - b.viz.s * (b.viz.h || 40) - 8} 
+                  textAnchor="middle" 
+                  fontSize="16" 
+                  fill={C.gold} 
+                  fontWeight="700"
+                >
+                  {lvl}
+                </text>
+
+                {/* TOOLTIP AO PASSAR MOUSE */}
                 {isHovered && (
-                  <foreignObject x={b.viz.cx - 80} y={b.viz.cy - 120} width="160" height="100">
-                    <div style={{ background: '#000', color: '#fff', padding: '8px', borderRadius: 6, fontSize: 11, border: `2px solid ${C.gold}`, fontFamily: 'Georgia, serif', textAlign: 'center' }}>
-                      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{b.icon} {b.name}</div>
-                      <div style={{ fontSize: 10, color: C.gold }}>Nível {lvl}/{b.max}</div>
-                      <div style={{ fontSize: 10, marginTop: 4, lineHeight: 1.3 }}>{b.desc}</div>
+                  <foreignObject x={b.viz.cx - 90} y={b.viz.cy - 140} width="180" height="120">
+                    <div style={{ background: 'rgba(0,0,0,0.95)', color: C.gold, padding: '10px', borderRadius: 8, fontSize: 12, border: `2px solid ${C.gold}`, fontFamily: 'Georgia, serif' }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: '#fff' }}>
+                        {b.icon} {b.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.gold, marginBottom: 4 }}>
+                        Nível {lvl}/{b.max}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#ccc', lineHeight: 1.4 }}>
+                        {b.desc}
+                      </div>
+                      <div style={{ fontSize: 10, color: C.gold, marginTop: 6, fontWeight: 700 }}>
+                        Clique para detalhes
+                      </div>
                     </div>
                   </foreignObject>
                 )}
@@ -289,42 +338,151 @@ function VillageScreen(p) {
         </svg>
       </div>
 
-      {/* BARRA LATERAL COLORIDA */}
-      <div style={{ flex: '1 1 280px', minWidth: 240, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* SIDEBAR À DIREITA (30%) */}
+      <div style={{ flex: '0 0 30%', background: `linear-gradient(${C.parch}, ${C.parchD})`, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Resumo */}
-        <SidePanel title="📊 Resumo" titleBg={C.blue} titleBgLight={C.blueLight}>
+        <MiniPanel title="📊 Resumo" titleBg={C.blue}>
           <Line k="🏅 Pontos" v={fmt(p.points)} />
-          <Line k="👥 População" v={`${fmt(popUsed)} / ${fmt(popMax)}`} />
-          <Line k="📦 Armazém" v={`${fmt(g.resources.wood + g.resources.iron + g.resources.wheat)} / ${fmt(whCap * 3)}`} />
-        </SidePanel>
+          <Line k="👥 Pop" v={`${fmt(popUsed)}/${fmt(popMax)}`} />
+          <Line k="🏠 Armazém" v={`${fmt(g.resources.wood + g.resources.iron + g.resources.wheat)}/${fmt(whCap * 3)}`} />
+        </MiniPanel>
 
         {/* Produção */}
-        <SidePanel title="⚒️ Produção/h" titleBg={C.green} titleBgLight={C.greenLight}>
-          <Line k="🪵 Madeira" v={`+${fmt(p.rates.wood)}`} />
-          <Line k="⛏️ Ferro" v={`+${fmt(p.rates.iron)}`} />
-          <Line k="🌾 Trigo" v={`+${fmt(p.rates.wheat)}`} />
-        </SidePanel>
+        <MiniPanel title="⚒️ Produção/h" titleBg={C.green}>
+          <Line k="🪵" v={fmt(p.rates.wood)} />
+          <Line k="⛏️" v={fmt(p.rates.iron)} />
+          <Line k="🌾" v={fmt(p.rates.wheat)} />
+        </MiniPanel>
 
         {/* Efeitos */}
-        <SidePanel title="✨ Efeitos ativos" titleBg={C.purple} titleBgLight={C.purpleLight}>
-          {p.isVip && <Line k="👑" v="VIP +20% produção" />}
-          {L.wall > 0 && <Line k="🧱" v={`+${L.wall * 5}% defesa`} />}
-          <Line k="📍" v={`${1 + g.conquered} aldeias`} />
-        </SidePanel>
+        <MiniPanel title="✨ Efeitos" titleBg={C.purple}>
+          {p.isVip && <div style={{ fontSize: 10, color: C.w1 }}>👑 VIP +20%</div>}
+          {L.wall > 0 && <div style={{ fontSize: 10, color: C.w1 }}>🧱 +{L.wall * 5}% def</div>}
+          <div style={{ fontSize: 10, color: C.w1 }}>📍 {1 + g.conquered} aldeias</div>
+        </MiniPanel>
 
         {/* Próximas Missões */}
-        <SidePanel title="🎯 Próximas Missões" titleBg={C.darkGold} titleBgLight={C.gold}>
-          {MISSIONS.slice(0, 3).map(m => {
+        <MiniPanel title="🎯 Missões" titleBg={C.darkGold}>
+          {MISSIONS.slice(0, 2).map(m => {
             const done = (g.questsClaimed || []).includes(m.id);
             const ready = !done && m.chk(g);
             return (
-              <div key={m.id} style={{ padding: '6px 0', borderBottom: `1px solid ${C.parchD}`, fontSize: 11 }}>
-                <div style={{ fontWeight: 700, color: done ? C.green : ready ? C.gold : C.w2 }}>{done ? '✅' : ready ? '🎁' : '⏳'} {m.t}</div>
+              <div key={m.id} style={{ fontSize: 9, color: C.w1, marginBottom: 3 }}>
+                {done ? '✅' : ready ? '🎁' : '⏳'} {m.t.slice(0, 15)}...
               </div>
             );
           })}
-          <button onClick={() => p.setScreen('missions')} style={{ marginTop: 8, background: C.blue, color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontWeight: 700, width: '100%' }}>Ver todas →</button>
-        </SidePanel>
+        </MiniPanel>
+      </div>
+    </div>
+  );
+}
+
+function MiniPanel({ title, titleBg, children }) {
+  const C = { parch: '#ece0c6', parchD: '#dcc9a4', border: '#b8a878' };
+  return (
+    <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `1px solid ${C.border}`, borderRadius: 6, overflow: 'hidden' }}>
+      <div style={{ background: titleBg, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 8px' }}>{title}</div>
+      <div style={{ padding: '6px 8px', fontSize: 10 }}>{children}</div>
+    </div>
+  );
+}
+
+/* ===== PÁGINA DE PRÉDIO ===== */
+function BuildingPage(p) {
+  const { g, L, C, setScreen, flash, afford, upgrade } = p;
+  const buildingId = p.g.currentBuilding;
+  if (!buildingId || !BUILDINGS[buildingId]) return null;
+
+  const b = BUILDINGS[buildingId];
+  const lvl = L[buildingId] || 0;
+  const nextLvl = lvl + 1;
+  const canBuild = lvl < b.max;
+  const c = canBuild ? cost(b, nextLvl) : null;
+  const canAfford = canBuild && afford(b, lvl);
+
+  return (
+    <div style={{ padding: '20px', maxWidth: 800, margin: '0 auto', fontFamily: 'Georgia, serif' }}>
+      <button onClick={() => setScreen('village')} style={{ background: 'transparent', color: C.gold, border: `2px solid ${C.gold}`, padding: '8px 16px', cursor: 'pointer', marginBottom: 16, borderRadius: 6, fontWeight: 700, fontSize: 14 }}>
+        ← Voltar à Aldeia
+      </button>
+
+      <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `3px solid ${C.border}`, borderRadius: 12, padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,.2)' }}>
+        {/* Cabeçalho */}
+        <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: `2px solid ${C.border}`, paddingBottom: 16 }}>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>{b.icon}</div>
+          <h1 style={{ fontSize: 28, color: C.w1, margin: 0, marginBottom: 4 }}>{b.name}</h1>
+          <p style={{ fontSize: 13, color: C.w2, margin: 0 }}>{b.desc}</p>
+        </div>
+
+        {/* Info de Nível */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 20, padding: '12px', background: 'rgba(200,150,100,.1)', borderRadius: 8 }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 12, color: C.w2 }}>Nível Atual</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: C.gold }}>{lvl}</div>
+          </div>
+          <div style={{ fontSize: 32, color: C.border }}>→</div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 12, color: C.w2 }}>Próximo Nível</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: canBuild ? C.gold : '#999' }}>
+              {canBuild ? nextLvl : 'Máximo'}
+            </div>
+          </div>
+        </div>
+
+        {/* Custo */}
+        {canBuild && c && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.w1, marginBottom: 8 }}>Custo para construir:</div>
+            <div style={{ display: 'flex', gap: 12, padding: '10px', background: canAfford ? 'rgba(94,138,62,.15)' : 'rgba(138,42,42,.15)', borderRadius: 8 }}>
+              <div style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>
+                <div style={{ color: C.w2 }}>🪵 Madeira</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: canAfford ? C.green : '#999' }}>{fmt(c.w)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>
+                <div style={{ color: C.w2 }}>⛏️ Ferro</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: canAfford ? C.green : '#999' }}>{fmt(c.i)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>
+                <div style={{ color: C.w2 }}>🌾 Trigo</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: canAfford ? C.green : '#999' }}>{fmt(c.h)}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tempo */}
+        {canBuild && (
+          <div style={{ marginBottom: 20, padding: '10px', background: 'rgba(200,150,100,.1)', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: C.w2 }}>⏱️ Tempo de construção</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: C.gold }}>{fmtTime(buildTime(b, nextLvl, L.mainBuilding) * 60)}</div>
+          </div>
+        )}
+
+        {/* Botão */}
+        <button
+          onClick={() => {
+            upgrade(buildingId);
+            setScreen('village');
+          }}
+          disabled={!canBuild || !canAfford}
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: 16,
+            fontWeight: 700,
+            border: 'none',
+            borderRadius: 8,
+            cursor: canBuild && canAfford ? 'pointer' : 'not-allowed',
+            background: canBuild && canAfford ? C.green : '#999',
+            color: '#fff',
+            transition: 'all 0.2s',
+            opacity: canBuild && canAfford ? 1 : 0.6,
+            fontFamily: 'Georgia, serif'
+          }}
+        >
+          {!canBuild ? '✅ Máximo nível atingido' : canAfford ? '🔨 Construir' : '❌ Recursos insuficientes'}
+        </button>
       </div>
     </div>
   );

@@ -1,40 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // ============================================================
-// ⚔️ REALM CONQUEST — V6 (ARTE REAL — Texturas, sombras, detalhes)
-// Cada prédio com textura realista · Aldeia medieval verdadeira
+// ⚔️ REALM CONQUEST — V8
+// • URLs de imagens CORRETAS (confirmadas no OpenGameArt, CC0)
+// • Rede de segurança: se imagem falhar, mostra ícone limpo (nunca quebra)
+// • Sidebar corrigido de verdade (min-width:0 + largura fixa + box-sizing)
 // ============================================================
 
-const C = { gold: '#c9a961', darkGold: '#8a7a3a', parch: '#ece0c6', parchD: '#dcc9a4', w1: '#4a3a1a', w2: '#6a5a3a', w3: '#8a7a5a', border: '#b8a878', headerBg: '#2a2a2a', headerBorder: '#5a4a2a', green: '#3d6a22', greenLight: '#5a9a3a', blue: '#2a5a8a', blueLight: '#4a7aaa', purple: '#6a3a8a', purpleLight: '#8a5aaa', red: '#8a2a2a' };
+const C = { gold: '#c9a961', darkGold: '#8a7a3a', parch: '#ece0c6', parchD: '#dcc9a4', w1: '#4a3a1a', w2: '#6a5a3a', w3: '#8a7a5a', border: '#b8a878', headerBg: '#2a2a2a', headerBorder: '#5a4a2a', green: '#3d6a22', blue: '#2a5a8a', purple: '#6a3a8a', red: '#8a2a2a' };
+
+// Assets profissionais CC0 — URLs confirmadas direto do OpenGameArt
+const IMG = {
+  house1: 'https://opengameart.org/sites/default/files/house1_0.png',
+  house1b: 'https://opengameart.org/sites/default/files/house1b.png',
+  house1c: 'https://opengameart.org/sites/default/files/house1c.png',
+  barracks: 'https://opengameart.org/sites/default/files/barracks_2.png',
+  stable: 'https://opengameart.org/sites/default/files/stable.png',
+  blacksmith: 'https://opengameart.org/sites/default/files/blacksmith.png',
+  tower: 'https://opengameart.org/sites/default/files/watchtower_lvl2-exp_full_size.png'
+};
 
 const BUILDINGS = {
-  mainBuilding: { name: 'Edifício Principal', icon: '🏛️', max: 30, w: 90, i: 80, h: 40, time: 25, desc: 'Coração da aldeia', viz: { cx: 500, cy: 286 } },
-  commandCenter: { name: 'Centro de Comando', icon: '🏰', max: 1, w: 0, i: 0, h: 0, time: 1, desc: 'Quartel-general', viz: { cx: 492, cy: 402 } },
-  church: { name: 'Igreja', icon: '⛪', max: 1, w: 2000, i: 1500, h: 1000, time: 90, desc: 'Treina sacerdotes', viz: { cx: 690, cy: 226 } },
-  woodcutter: { name: 'Serraria', icon: '🪵', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Corta madeira', viz: { cx: 322, cy: 226 } },
-  mine: { name: 'Mina de Ferro', icon: '⛏️', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Extrai ferro', viz: { cx: 500, cy: 198 } },
-  smithy: { name: 'Ferreiro', icon: '🔧', max: 20, w: 240, i: 200, h: 150, time: 55, desc: 'Pesquisa tropas', viz: { cx: 234, cy: 316 } },
-  market: { name: 'Mercado', icon: '🏪', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Troca recursos', viz: { cx: 768, cy: 320 } },
-  barracks: { name: 'Quartel', icon: '🎖️', max: 25, w: 100, i: 50, h: 50, time: 22, desc: 'Treina infantaria', viz: { cx: 352, cy: 398 } },
-  stable: { name: 'Estábulo', icon: '🐴', max: 20, w: 150, i: 100, h: 100, time: 34, desc: 'Cria cavalaria', viz: { cx: 648, cy: 398 } },
-  warehouse: { name: 'Armazém', icon: '🏠', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Guarda recursos', viz: { cx: 288, cy: 486 } },
-  farm: { name: 'Fazenda', icon: '🌾', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Produz trigo', viz: { cx: 512, cy: 502 } },
-  workshop: { name: 'Oficina', icon: '🔨', max: 20, w: 200, i: 150, h: 100, time: 46, desc: 'Máquinas de cerco', viz: { cx: 712, cy: 486 } },
-  wall: { name: 'Muralha', icon: '🧱', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Protege aldeia', viz: { wall: true } }
+  mainBuilding: { name: 'Edifício Principal', emoji: '🏰', max: 30, w: 90, i: 80, h: 40, time: 25, desc: 'Coração da aldeia', img: IMG.tower },
+  church: { name: 'Igreja', emoji: '⛪', max: 1, w: 2000, i: 1500, h: 1000, time: 90, desc: 'Treina sacerdotes', img: IMG.house1c },
+  woodcutter: { name: 'Serraria', emoji: '🪵', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Corta madeira', img: IMG.house1 },
+  mine: { name: 'Mina de Ferro', emoji: '⛏️', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Extrai ferro', img: IMG.house1b },
+  smithy: { name: 'Ferreiro', emoji: '🔧', max: 20, w: 240, i: 200, h: 150, time: 55, desc: 'Pesquisa tropas', img: IMG.blacksmith },
+  market: { name: 'Mercado', emoji: '🏪', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Troca recursos', img: IMG.house1b },
+  barracks: { name: 'Quartel', emoji: '🎖️', max: 25, w: 100, i: 50, h: 50, time: 22, desc: 'Treina infantaria', img: IMG.barracks },
+  stable: { name: 'Estábulo', emoji: '🐴', max: 20, w: 150, i: 100, h: 100, time: 34, desc: 'Cria cavalaria', img: IMG.stable },
+  warehouse: { name: 'Armazém', emoji: '🏠', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Guarda recursos', img: IMG.house1 },
+  farm: { name: 'Fazenda', emoji: '🌾', max: 30, w: 50, i: 30, h: 30, time: 16, desc: 'Produz trigo', img: IMG.house1c },
+  workshop: { name: 'Oficina', emoji: '🔨', max: 20, w: 200, i: 150, h: 100, time: 46, desc: 'Máquinas de cerco', img: IMG.house1b },
+  wall: { name: 'Muralha', emoji: '🧱', max: 20, w: 100, i: 50, h: 50, time: 22, desc: 'Protege aldeia', img: null }
 };
 
 const TROOPS = {
-  spearman: { name: 'Lanceiro', icon: '🔱', atk: 8, def: 12, pop: 1, h: 55, time: 6 },
-  swordsman: { name: 'Espadachim', icon: '🗡️', atk: 10, def: 8, pop: 1, h: 50, time: 7 },
-  archer: { name: 'Arqueiro', icon: '🏹', atk: 12, def: 4, pop: 1, h: 50, time: 9 },
-  barbarian: { name: 'Bárbaro', icon: '🪓', atk: 15, def: 10, pop: 1, h: 80, time: 12 },
-  spy: { name: 'Espião', icon: '🕵️', atk: 0, def: 0, pop: 1, h: 100, time: 8 },
-  cavalry: { name: 'Cavalaria', icon: '🐴', atk: 25, def: 15, pop: 2, h: 200, time: 18 },
-  archerCav: { name: 'Arq. a Cavalo', icon: '🐎', atk: 18, def: 10, pop: 2, h: 180, time: 15 },
-  royalCav: { name: 'Cavalaria Real', icon: '👑', atk: 40, def: 25, pop: 3, h: 300, time: 25 },
-  ram: { name: 'Aríete', icon: '⚒️', atk: 50, def: 8, pop: 4, h: 100, time: 22 },
-  catapult: { name: 'Catapulta', icon: '💣', atk: 80, def: 2, pop: 5, h: 400, time: 30 },
-  priest: { name: 'Sacerdote', icon: '✝️', atk: 0, def: 5, pop: 20, h: 5000, time: 60 }
+  spearman: { pop: 1 }, swordsman: { pop: 1 }, archer: { pop: 1 }, barbarian: { pop: 1 }, spy: { pop: 1 },
+  cavalry: { pop: 2 }, archerCav: { pop: 2 }, royalCav: { pop: 3 }, ram: { pop: 4 }, catapult: { pop: 5 }, priest: { pop: 20 }
 };
 
 const cost = (b, lvl) => { const m = Math.pow(1.26, Math.max(0, lvl - 1)); return { w: Math.floor(b.w * m), i: Math.floor(b.i * m), h: Math.floor(b.h * m) }; };
@@ -47,352 +50,250 @@ const villagePoints = (levels, conquered) => Object.values(levels).reduce((s, l)
 
 const startState = () => ({
   resources: { wood: 4000, iron: 3000, wheat: 4000 },
-  levels: { mainBuilding: 3, commandCenter: 1, woodcutter: 5, mine: 5, farm: 5, warehouse: 5, smithy: 1, market: 0, barracks: 3, stable: 1, workshop: 0, church: 0, wall: 2 },
-  troops: { spearman: 40, swordsman: 30, archer: 0, barbarian: 0, spy: 0, cavalry: 0, archerCav: 0, royalCav: 0, ram: 0, catapult: 0, priest: 0 },
-  conquered: 0, isVip: true, questsClaimed: []
+  levels: { mainBuilding: 3, woodcutter: 5, mine: 5, farm: 5, warehouse: 5, smithy: 1, market: 0, barracks: 3, stable: 1, workshop: 0, church: 0, wall: 2 },
+  troops: { spearman: 40, swordsman: 30 },
+  conquered: 0, isVip: true
 });
+
+// ===== SPRITE COM REDE DE SEGURANÇA =====
+// Tenta carregar a imagem profissional; se falhar, mostra emoji grande (nunca quebra)
+function Sprite({ img, emoji, size }) {
+  const [err, setErr] = useState(false);
+  if (err || !img) {
+    return <div style={{ fontSize: size, lineHeight: 1, filter: 'drop-shadow(0 5px 6px rgba(0,0,0,.45))' }}>{emoji}</div>;
+  }
+  return <img src={img} alt="" onError={() => setErr(true)} style={{ width: size * 1.5, height: 'auto', display: 'block', filter: 'drop-shadow(0 5px 8px rgba(0,0,0,.45))' }} />;
+}
 
 export default function App() {
   const [g, setG] = useState(startState());
   const [screen, setScreen] = useState('village');
   const [msg, setMsg] = useState('');
-  const [tooltip, setTooltip] = useState(null);
+  const [hover, setHover] = useState(null);
 
   const L = g.levels;
   const R = g.resources;
-  const T = g.troops;
   const points = villagePoints(L, g.conquered);
   const rates = { wood: Math.floor(production(L.woodcutter) * 1.2), iron: Math.floor(production(L.mine) * 1.2), wheat: Math.floor(production(L.farm) * 1.2) };
-  const popUsed = Object.entries(T).reduce((s, [k, v]) => s + (TROOPS[k]?.pop || 0) * v, 0);
+  const popUsed = Object.entries(g.troops).reduce((s, [k, v]) => s + (TROOPS[k]?.pop || 0) * v, 0);
   const popMax = maxPop(L.farm);
   const whCap = warehouseCap(L.warehouse);
 
-  const flash = (txt) => { setMsg(txt); setTimeout(() => setMsg(''), 3000); };
-  const setScreen_safe = (s) => { if (s.startsWith('building_')) { setScreen(s); } else { setScreen(s); setTooltip(null); } };
+  const flash = (txt) => { setMsg(txt); setTimeout(() => setMsg(''), 2500); };
+  const go = (s) => { setScreen(s); setHover(null); };
 
   const NAV = [['village', '🏰', 'Aldeia', 0], ['mapa', '🗺️', 'Mapa', 0], ['missions', '🎯', 'Missões', 3], ['recrutar', '⚔️', 'Recrutar', 0], ['command', '🛡️', 'Tropas', 0], ['reports', '📜', 'Relatórios', 0], ['ranking', '🏆', 'Ranking', 0], ['tribo', '⚜️', 'Tribo', 0], ['amigos', '👥', 'Amigos', 0], ['perfil', '👤', 'Perfil', 0]];
 
   return (
-    <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, minHeight: '100vh', fontFamily: 'Georgia, serif', color: C.w1, overflow: 'hidden' }}>
-      {/* HEADER */}
-      <div style={{ background: `linear-gradient(${C.headerBg}, #1a1a1a)`, borderBottom: `3px solid ${C.headerBorder}`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: C.gold }}>⚔️ REALM CONQUEST</div>
-        <div style={{ display: 'flex', gap: 20 }}>
-          <div style={{ textAlign: 'center', fontSize: 11 }}>
-            <div style={{ color: C.gold, fontWeight: 700 }}>🪵 {fmt(R.wood)}</div>
-            <div style={{ fontSize: 9, color: C.w3 }}>+{fmt(rates.wood)}/h</div>
-          </div>
-          <div style={{ textAlign: 'center', fontSize: 11 }}>
-            <div style={{ color: C.gold, fontWeight: 700 }}>⛏️ {fmt(R.iron)}</div>
-            <div style={{ fontSize: 9, color: C.w3 }}>+{fmt(rates.iron)}/h</div>
-          </div>
-          <div style={{ textAlign: 'center', fontSize: 11 }}>
-            <div style={{ color: C.gold, fontWeight: 700 }}>🌾 {fmt(R.wheat)}</div>
-            <div style={{ fontSize: 9, color: C.w3 }}>+{fmt(rates.wheat)}/h</div>
-          </div>
-          <div style={{ textAlign: 'center', fontSize: 11 }}>
+    <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden', fontFamily: 'Georgia, serif', color: C.w1 }}>
+      {/* box-sizing global — impede estouro de largura */}
+      <style>{`* { box-sizing: border-box; } body { margin: 0; }`}</style>
+
+      {/* HEADER (com wrap pra nunca estourar) */}
+      <div style={{ background: `linear-gradient(${C.headerBg}, #1a1a1a)`, borderBottom: `3px solid ${C.headerBorder}`, padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', rowGap: 6 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: C.gold, whiteSpace: 'nowrap' }}>⚔️ REALM CONQUEST</div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          {[['🪵', R.wood, rates.wood], ['⛏️', R.iron, rates.iron], ['🌾', R.wheat, rates.wheat]].map(([ic, val, rt], i) => (
+            <div key={i} style={{ textAlign: 'center', fontSize: 11, whiteSpace: 'nowrap' }}>
+              <div style={{ color: C.gold, fontWeight: 700 }}>{ic} {fmt(val)}</div>
+              <div style={{ fontSize: 9, color: C.w3 }}>+{fmt(rt)}/h</div>
+            </div>
+          ))}
+          <div style={{ textAlign: 'center', fontSize: 11, whiteSpace: 'nowrap' }}>
             <div style={{ color: C.gold, fontWeight: 700 }}>🏅 {fmt(points)}</div>
             <div style={{ fontSize: 9, color: C.w3 }}>Pontos</div>
           </div>
-          <button style={{ background: C.purple, color: '#fff', border: 'none', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontWeight: 700, fontSize: 10 }}>👑 VIP</button>
+          <button style={{ background: C.purple, color: '#fff', border: 'none', padding: '5px 10px', borderRadius: 4, cursor: 'pointer', fontWeight: 700, fontSize: 10, whiteSpace: 'nowrap' }}>👑 VIP</button>
         </div>
       </div>
 
       {/* NAV */}
-      <div style={{ background: C.headerBg, borderBottom: `2px solid ${C.gold}`, display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
+      <div style={{ background: C.headerBg, borderBottom: `2px solid ${C.gold}`, display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
         {NAV.map(([id, icon, label, badge]) => (
-          <button key={id} onClick={() => setScreen_safe(id)} style={{ flex: 1, background: screen === id ? C.gold : 'transparent', color: screen === id ? '#000' : C.gold, border: 'none', padding: '10px', cursor: 'pointer', fontSize: 10, fontWeight: 700, position: 'relative' }}>
+          <button key={id} onClick={() => go(id)} style={{ flex: '1 1 auto', minWidth: 64, background: screen === id ? C.gold : 'transparent', color: screen === id ? '#000' : C.gold, border: 'none', padding: '8px 4px', cursor: 'pointer', fontSize: 10, fontWeight: 700, position: 'relative' }}>
             <div style={{ fontSize: 16 }}>{icon}</div>
             {label}
-            {badge > 0 && <div style={{ position: 'absolute', top: 2, right: 2, background: C.red, color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{badge}</div>}
+            {badge > 0 && <span style={{ position: 'absolute', top: 2, right: 8, background: C.red, color: '#fff', borderRadius: '50%', width: 15, height: 15, fontSize: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{badge}</span>}
           </button>
         ))}
       </div>
 
       {/* TELAS */}
-      {screen === 'village' && <VillageScreen L={L} R={R} g={g} C={C} setScreen={setScreen_safe} tooltip={tooltip} setTooltip={setTooltip} points={points} rates={rates} popUsed={popUsed} popMax={popMax} whCap={whCap} />}
-      {screen.startsWith('building_') && <BuildingPage buildingId={screen.replace('building_', '')} L={L} R={R} C={C} setScreen={setScreen_safe} g={g} setG={setG} flash={flash} />}
-      {screen === 'mapa' && <div style={{ padding: 20, color: C.w1 }}>🗺️ Mapa (em breve)</div>}
-      {screen === 'missions' && <div style={{ padding: 20, color: C.w1 }}>🎯 Missões (em breve)</div>}
-      {screen === 'recrutar' && <div style={{ padding: 20, color: C.w1 }}>⚔️ Recrutar (em breve)</div>}
-      {screen === 'command' && <div style={{ padding: 20, color: C.w1 }}>🛡️ Tropas (em breve)</div>}
-      {screen === 'reports' && <div style={{ padding: 20, color: C.w1 }}>📜 Relatórios (em breve)</div>}
-      {screen === 'ranking' && <div style={{ padding: 20, color: C.w1 }}>🏆 Ranking (em breve)</div>}
-      {screen === 'tribo' && <div style={{ padding: 20, color: C.w1 }}>⚜️ Tribo (em breve)</div>}
-      {screen === 'amigos' && <div style={{ padding: 20, color: C.w1 }}>👥 Amigos (em breve)</div>}
-      {screen === 'perfil' && <div style={{ padding: 20, color: C.w1 }}>👤 Perfil (em breve)</div>}
+      {screen === 'village' && <Village L={L} R={R} g={g} go={go} hover={hover} setHover={setHover} points={points} rates={rates} popUsed={popUsed} popMax={popMax} whCap={whCap} />}
+      {screen.startsWith('building_') && <BuildingPage buildingId={screen.replace('building_', '')} L={L} R={R} go={go} setG={setG} flash={flash} />}
+      {!screen.startsWith('building_') && screen !== 'village' && (
+        <div style={{ padding: 30, textAlign: 'center', color: C.w2, fontSize: 15 }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>{(NAV.find(n => n[0] === screen) || [])[1]}</div>
+          {(NAV.find(n => n[0] === screen) || [])[2]} — em breve
+        </div>
+      )}
 
       {msg && <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: C.headerBg, color: C.gold, padding: '10px 16px', borderRadius: 8, border: `2px solid ${C.gold}`, zIndex: 9999 }}>{msg}</div>}
     </div>
   );
 }
 
-/* ===== VILLAGE SCREEN ===== */
-function VillageScreen(p) {
-  const { L, R, g, C, setScreen, tooltip, setTooltip, points, rates, popUsed, popMax, whCap } = p;
+/* ===== VILLAGE ===== */
+function Village(p) {
+  const { L, R, g, go, hover, setHover, points, rates, popUsed, popMax, whCap } = p;
+
+  // ordem e posição (% dentro da cena), arrumadas dentro da elipse
+  const layout = [
+    ['mainBuilding', 50, 22],
+    ['church', 76, 30], ['smithy', 24, 30],
+    ['woodcutter', 14, 50], ['mine', 86, 50],
+    ['barracks', 34, 46], ['stable', 66, 46],
+    ['market', 50, 50],
+    ['warehouse', 22, 70], ['workshop', 78, 70],
+    ['farm', 40, 76], ['mine2', 60, 76]
+  ];
+
+  const wallThickness = 3 + (L.wall || 0) * 1.5;
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 120px)', gap: 0 }}>
-      {/* ALDEIA (70%) */}
-      <div style={{ flex: '0 0 70%', background: '#4a7a30', overflow: 'auto' }}>
-        <svg viewBox="0 0 1000 700" style={{ width: '100%', height: '100%', minHeight: 500, background: '#4a7a30' }}>
-          <defs>
-            {/* Textura de grama */}
-            <pattern id="grassTexture" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <rect width="100" height="100" fill="#4a8a2a" />
-              <circle cx="20" cy="20" r="2" fill="#2a5a1a" opacity="0.3" />
-              <circle cx="60" cy="40" r="2" fill="#2a5a1a" opacity="0.3" />
-              <circle cx="80" cy="70" r="2" fill="#2a5a1a" opacity="0.3" />
-            </pattern>
+    <div style={{ display: 'flex', height: 'calc(100vh - 132px)', minHeight: 420 }}>
+      {/* ALDEIA — flex:1 + minWidth:0 (ESSENCIAL pra não empurrar o sidebar) */}
+      <div style={{ flex: '1 1 0', minWidth: 0, background: 'linear-gradient(160deg,#5a9a3a 0%,#3a6a1a 100%)', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Cena */}
+        <div style={{ position: 'relative', width: '94%', maxWidth: 760, aspectRatio: '4 / 3' }}>
+          {/* Terreno (elipse) */}
+          <div style={{ position: 'absolute', inset: '4%', borderRadius: '50%', background: 'radial-gradient(ellipse at 45% 38%, #6aa83f 0%, #4a8a2a 55%, #3a6f1f 100%)', boxShadow: 'inset 0 0 50px rgba(0,0,0,.25)' }} />
+          {/* Muralha (anel) */}
+          <div style={{ position: 'absolute', inset: '2%', borderRadius: '50%', border: `${wallThickness}px solid #9a7a52`, boxShadow: 'inset 0 0 14px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.3)' }} />
+          {/* Caminhos suaves */}
+          <div style={{ position: 'absolute', left: '20%', top: '50%', width: '60%', height: 10, background: 'rgba(160,130,80,.35)', borderRadius: 10, transform: 'translateY(-50%)' }} />
+          <div style={{ position: 'absolute', top: '22%', left: '50%', width: 10, height: '56%', background: 'rgba(160,130,80,.30)', borderRadius: 10, transform: 'translateX(-50%)' }} />
 
-            {/* Gradientes para prédios */}
-            <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#d9a962" />
-              <stop offset="50%" stopColor="#c89450" />
-              <stop offset="100%" stopColor="#a67c3a" />
-            </linearGradient>
+          {/* Árvores decorativas */}
+          {[[10, 18], [90, 20], [8, 82], [92, 80], [50, 92]].map(([x, y], i) => (
+            <div key={i} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', fontSize: 22, filter: 'drop-shadow(0 3px 3px rgba(0,0,0,.4))' }}>🌲</div>
+          ))}
 
-            <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#c8c0b8" />
-              <stop offset="50%" stopColor="#b8a8a0" />
-              <stop offset="100%" stopColor="#988880" />
-            </linearGradient>
-
-            <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#a84a2a" />
-              <stop offset="50%" stopColor="#883a1a" />
-              <stop offset="100%" stopColor="#682a0a" />
-            </linearGradient>
-          </defs>
-
-          {/* Grama com textura */}
-          <ellipse cx="500" cy="350" rx="480" ry="260" fill="#3a6a1a" />
-          <ellipse cx="500" cy="350" rx="460" ry="240" fill="url(#grassTexture)" />
-          <ellipse cx="500" cy="340" rx="450" ry="230" fill="#4a8a2a" opacity="0.6" />
-
-          {/* Sombras do terreno */}
-          <ellipse cx="280" cy="250" rx="120" ry="50" fill="rgba(0,0,0,0.08)" />
-          <ellipse cx="720" cy="450" rx="140" ry="60" fill="rgba(0,0,0,0.1)" />
-
-          {/* PRÉDIOS COM ARTE REAL */}
-          {Object.entries(BUILDINGS).map(([bid, b]) => {
-            if (!b.viz || !b.viz.cx) return null;
+          {/* PRÉDIOS */}
+          {layout.map(([key, x, y]) => {
+            const bid = key === 'mine2' ? 'mine' : key;
+            const b = BUILDINGS[bid];
+            if (!b) return null;
             const lvl = L[bid] || 0;
-            const isHovered = tooltip === bid;
-
+            const isH = hover === key;
             return (
-              <g key={bid} onClick={() => setScreen(`building_${bid}`)} onMouseEnter={() => setTooltip(bid)} onMouseLeave={() => setTooltip(null)} style={{ cursor: 'pointer' }}>
-                {/* Sombra de contato */}
-                <ellipse cx={b.viz.cx} cy={b.viz.cy + 45} rx="55" ry="20" fill="rgba(0,0,0,0.25)" />
-
-                {/* PRÉDIO COM DETALHES */}
-                <RealBuilding bid={bid} lvl={lvl} cx={b.viz.cx} cy={b.viz.cy} C={C} />
-
-                {/* Nível destacado */}
-                <circle cx={b.viz.cx} cy={b.viz.cy - 60} r="20" fill="rgba(0,0,0,0.9)" stroke={C.gold} strokeWidth="2" />
-                <text x={b.viz.cx} y={b.viz.cy - 53} textAnchor="middle" fontSize="18" fill={C.gold} fontWeight="700">{lvl}</text>
-
-                {/* TOOLTIP */}
-                {isHovered && (
-                  <foreignObject x={b.viz.cx - 100} y={b.viz.cy - 150} width="200" height="130">
-                    <div style={{ background: 'rgba(0,0,0,0.95)', color: C.gold, padding: '12px', borderRadius: 8, fontSize: 12, border: `2px solid ${C.gold}`, fontFamily: 'Georgia, serif', textAlign: 'center' }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#fff', marginBottom: 6 }}>
-                        {BUILDINGS[bid].name}
-                      </div>
-                      <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>
-                        Nível {lvl}/{BUILDINGS[bid].max}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#ddd', lineHeight: 1.4, marginBottom: 8 }}>
-                        {BUILDINGS[bid].desc}
-                      </div>
-                      <div style={{ fontSize: 10, color: C.gold, fontWeight: 700 }}>
-                        → Clique para upgrade
-                      </div>
-                    </div>
-                  </foreignObject>
+              <div key={key}
+                onClick={() => go(`building_${bid}`)}
+                onMouseEnter={() => setHover(key)}
+                onMouseLeave={() => setHover(null)}
+                style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, transform: `translate(-50%,-50%) scale(${isH ? 1.12 : 1})`, transition: 'transform .15s', cursor: 'pointer', zIndex: isH ? 999 : Math.round(y) }}>
+                {/* base/sombra */}
+                <div style={{ position: 'absolute', bottom: -6, left: '50%', transform: 'translateX(-50%)', width: 54, height: 16, background: 'rgba(0,0,0,.28)', borderRadius: '50%', filter: 'blur(2px)' }} />
+                <Sprite img={b.img} emoji={b.emoji} size={48} />
+                {/* nível */}
+                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: C.gold, minWidth: 28, height: 28, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, border: `2px solid ${C.gold}`, padding: '0 4px' }}>{lvl}</div>
+                {/* tooltip */}
+                {isH && (
+                  <div style={{ position: 'absolute', bottom: 'calc(100% + 14px)', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,.95)', color: '#fff', padding: '9px 11px', borderRadius: 8, border: `2px solid ${C.gold}`, width: 170, textAlign: 'center', zIndex: 1000 }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 3 }}>{b.name}</div>
+                    <div style={{ fontSize: 10, color: C.gold, marginBottom: 4 }}>Nível {lvl}/{b.max}</div>
+                    <div style={{ fontSize: 10, color: '#ddd', marginBottom: 6 }}>{b.desc}</div>
+                    <div style={{ fontSize: 9, color: C.gold, fontWeight: 700 }}>Clique para melhorar ▸</div>
+                  </div>
                 )}
-              </g>
+              </div>
             );
           })}
-        </svg>
+        </div>
       </div>
 
-      {/* SIDEBAR (30%) */}
-      <div style={{ flex: '0 0 30%', background: `linear-gradient(${C.parch}, ${C.parchD})`, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <MiniPanel title="📊 Resumo" bg={C.blue}>
-          <Line k="🏅 Pontos" v={fmt(points)} />
-          <Line k="👥 População" v={`${fmt(popUsed)}/${fmt(popMax)}`} />
-          <Line k="📦 Armazém" v={`${fmt(R.wood + R.iron + R.wheat)}/${fmt(whCap * 3)}`} />
-        </MiniPanel>
-
-        <MiniPanel title="⚒️ Produção/h" bg={C.green}>
-          <Line k="🪵 Madeira" v={`+${fmt(rates.wood)}`} />
-          <Line k="⛏️ Ferro" v={`+${fmt(rates.iron)}`} />
-          <Line k="🌾 Trigo" v={`+${fmt(rates.wheat)}`} />
-        </MiniPanel>
-
-        <MiniPanel title="✨ Efeitos" bg={C.purple}>
-          <Line k="👑" v="VIP +20% prod" />
-          <Line k="🧱" v={`+${L.wall * 5}% def`} />
-          <Line k="📍" v={`${1 + g.conquered} aldeias`} />
-        </MiniPanel>
-
-        <MiniPanel title="🎯 Missões" bg={C.darkGold}>
-          <Line k="✅" v="3 prontas" />
-          <Line k="⏳" v="7 em progresso" />
-        </MiniPanel>
+      {/* SIDEBAR — largura FIXA + flexShrink:0 (não corta mais) */}
+      <div style={{ width: 300, flexShrink: 0, background: `linear-gradient(${C.parch}, ${C.parchD})`, borderLeft: `3px solid ${C.border}`, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Panel title="📊 Resumo" bg={C.blue}>
+          <Row k="🏅 Pontos" v={fmt(points)} />
+          <Row k="👥 População" v={`${fmt(popUsed)} / ${fmt(popMax)}`} />
+          <Row k="📦 Armazém" v={`${fmt(R.wood + R.iron + R.wheat)} / ${fmt(whCap * 3)}`} />
+        </Panel>
+        <Panel title="⚒️ Produção / h" bg={C.green}>
+          <Row k="🪵 Madeira" v={`+${fmt(rates.wood)}`} />
+          <Row k="⛏️ Ferro" v={`+${fmt(rates.iron)}`} />
+          <Row k="🌾 Trigo" v={`+${fmt(rates.wheat)}`} />
+        </Panel>
+        <Panel title="✨ Efeitos" bg={C.purple}>
+          <Row k="👑 VIP" v="+20% prod" />
+          <Row k="🧱 Muralha" v={`+${(L.wall || 0) * 5}% def`} />
+          <Row k="📍 Aldeias" v={`${1 + g.conquered}`} />
+        </Panel>
+        <Panel title="🎯 Missões" bg={C.darkGold}>
+          <Row k="✅ Prontas" v="3" />
+          <Row k="⏳ Em progresso" v="7" />
+        </Panel>
       </div>
     </div>
   );
 }
 
-/* ===== PRÉDIOS COM ARTE REAL ===== */
-function RealBuilding({ bid, lvl, cx, cy, C }) {
-  // Cada prédio tem arte customizada com texturas reais
-
-  if (bid === 'mainBuilding') {
-    return (
-      <g>
-        {/* Parede com textura de pedra */}
-        <rect x={cx - 45} y={cy - 55} width="90" height="70" fill="url(#stoneGrad)" stroke="#7a6850" strokeWidth="2" />
-        {/* Detalhes: janelas */}
-        <rect x={cx - 30} y={cy - 45} width="12" height="12" fill="#4a3a2a" stroke="#2a1a0a" strokeWidth="1" />
-        <rect x={cx + 18} y={cy - 45} width="12" height="12" fill="#4a3a2a" stroke="#2a1a0a" strokeWidth="1" />
-        {/* Telhado 3D */}
-        <polygon points={`${cx - 45},${cy - 55} ${cx},${cy - 90} ${cx + 45},${cy - 55}`} fill="url(#roofGrad)" stroke="#502010" strokeWidth="2" />
-        {/* Sombra do telhado */}
-        <polygon points={`${cx},${cy - 90} ${cx + 45},${cy - 55} ${cx + 35},${cy - 45}`} fill="rgba(0,0,0,0.2)" />
-        {/* Porta */}
-        <rect x={cx - 12} y={cy - 5} width="24" height="30" fill="#6a4a2a" stroke="#3a2a0a" strokeWidth="2" rx="2" />
-      </g>
-    );
-  }
-
-  if (bid === 'farm') {
-    return (
-      <g>
-        {/* Estrutura de madeira */}
-        <rect x={cx - 40} y={cy - 35} width="80" height="45" fill="url(#woodGrad)" stroke="#8a6a40" strokeWidth="2" />
-        {/* Telhado palha */}
-        <polygon points={`${cx - 40},${cy - 35} ${cx},${cy - 65} ${cx + 40},${cy - 35}`} fill="#c9a540" stroke="#9a7a20" strokeWidth="2" />
-        {/* Textura palha */}
-        <path d={`M ${cx - 30},${cy - 50} Q ${cx - 15},${cy - 60} ${cx},${cy - 55}`} stroke="#8a6a20" strokeWidth="1" fill="none" opacity="0.5" />
-        <path d={`M ${cx},${cy - 55} Q ${cx + 15},${cy - 60} ${cx + 30},${cy - 50}`} stroke="#8a6a20" strokeWidth="1" fill="none" opacity="0.5" />
-        {/* Janelas */}
-        <circle cx={cx - 20} cy={cy - 15} r="6" fill="#3a2a1a" />
-        <circle cx={cx + 20} cy={cy - 15} r="6" fill="#3a2a1a" />
-        {/* Sombra interna */}
-        <rect x={cx - 40} y={cy - 35} width="80" height="45" fill="rgba(0,0,0,0.1)" opacity="0.3" />
-      </g>
-    );
-  }
-
-  if (bid === 'barracks') {
-    return (
-      <g>
-        {/* Parede de madeira escura */}
-        <rect x={cx - 40} y={cy - 45} width="80" height="55" fill="#8a6a4a" stroke="#5a4a2a" strokeWidth="2" />
-        {/* Padrão de tábuas */}
-        <line x1={cx - 40} y1={cy - 35} x2={cx + 40} y2={cy - 35} stroke="#5a4a2a" strokeWidth="1" opacity="0.5" />
-        <line x1={cx - 40} y1={cy - 20} x2={cx + 40} y2={cy - 20} stroke="#5a4a2a" strokeWidth="1" opacity="0.5" />
-        {/* Telhado de madeira */}
-        <polygon points={`${cx - 40},${cy - 45} ${cx},${cy - 75} ${cx + 40},${cy - 45}`} fill="url(#roofGrad)" stroke="#502010" strokeWidth="2" />
-        {/* Porta grande (quartel) */}
-        <rect x={cx - 18} y={cy - 15} width="36" height="40" fill="#4a3a2a" stroke="#2a1a0a" strokeWidth="2" rx="2" />
-        {/* Maçaneta */}
-        <circle cx={cx + 14} cy={cy + 5} r="3" fill="#c9a961" />
-      </g>
-    );
-  }
-
-  if (bid === 'stable') {
-    return (
-      <g>
-        {/* Parede de madeira clara (celeiro) */}
-        <rect x={cx - 45} y={cy - 50} width="90" height="60" fill="#c89450" stroke="#9a6a30" strokeWidth="2" />
-        {/* Padrão cruzado (X bracing) */}
-        <line x1={cx - 45} y1={cy - 50} x2={cx + 45} y2={cy + 10} stroke="rgba(0,0,0,0.1)" strokeWidth="2" />
-        <line x1={cx + 45} y1={cy - 50} x2={cx - 45} y2={cy + 10} stroke="rgba(0,0,0,0.1)" strokeWidth="2" />
-        {/* Telhado grande */}
-        <polygon points={`${cx - 45},${cy - 50} ${cx},${cy - 85} ${cx + 45},${cy - 50}`} fill="url(#roofGrad)" stroke="#502010" strokeWidth="2" />
-        {/* Duas aberturas grandes (para cavalos) */}
-        <rect x={cx - 35} y={cy - 25} width="28" height="35" fill="#3a2a1a" stroke="#1a0a0a" strokeWidth="2" />
-        <rect x={cx + 7} y={cy - 25} width="28" height="35" fill="#3a2a1a" stroke="#1a0a0a" strokeWidth="2" />
-      </g>
-    );
-  }
-
-  // Default para outros prédios
+function Panel({ title, bg, children }) {
   return (
-    <g>
-      <rect x={cx - 40} y={cy - 40} width="80" height="50" fill="url(#woodGrad)" stroke="#8a6a40" strokeWidth="2" />
-      <polygon points={`${cx - 40},${cy - 40} ${cx},${cy - 70} ${cx + 40},${cy - 40}`} fill="url(#roofGrad)" stroke="#502010" strokeWidth="2" />
-      <rect x={cx - 12} y={cy - 10} width="24" height="30" fill="#4a3a2a" stroke="#2a1a0a" strokeWidth="2" rx="2" />
-    </g>
-  );
-}
-
-function MiniPanel({ title, bg, children }) {
-  const C = { parch: '#ece0c6', parchD: '#dcc9a4', border: '#b8a878' };
-  return (
-    <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
-      <div style={{ background: bg, color: '#fff', fontSize: 11, fontWeight: 700, padding: '6px 10px' }}>{title}</div>
-      <div style={{ padding: '8px 10px', fontSize: 10 }}>{children}</div>
+    <div style={{ width: '100%', background: '#fff', border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ background: bg, color: '#fff', fontSize: 12, fontWeight: 700, padding: '7px 11px' }}>{title}</div>
+      <div style={{ padding: '7px 11px' }}>{children}</div>
     </div>
   );
 }
 
-function Line({ k, v }) {
-  return <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}><span>{k}</span><b>{v}</b></div>;
+function Row({ k, v }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '3px 0', fontSize: 12 }}>
+      <span style={{ color: C.w2, whiteSpace: 'nowrap' }}>{k}</span>
+      <b style={{ color: C.w1, whiteSpace: 'nowrap', textAlign: 'right' }}>{v}</b>
+    </div>
+  );
 }
 
-/* ===== BUILDING PAGE ===== */
-function BuildingPage({ buildingId, L, R, C, setScreen, g, setG, flash }) {
+/* ===== PÁGINA DO PRÉDIO ===== */
+function BuildingPage({ buildingId, L, R, go, setG, flash }) {
   const b = BUILDINGS[buildingId];
   if (!b) return null;
-
   const lvl = L[buildingId] || 0;
   const c = cost(b, lvl + 1);
   const canBuild = lvl < b.max;
   const canAfford = R.wood >= c.w && R.iron >= c.i && R.wheat >= c.h;
 
   const upgrade = () => {
-    if (!canBuild) { flash('❌ Máximo'); return; }
-    if (!canAfford) { flash('❌ Recursos'); return; }
-    setG(p => ({ ...p, resources: { wood: p.resources.wood - c.w, iron: p.resources.iron - c.i, wheat: p.resources.wheat - c.h } }));
-    flash('✅ Construindo!');
-    setScreen('village');
+    if (!canBuild) { flash('❌ Nível máximo'); return; }
+    if (!canAfford) { flash('❌ Recursos insuficientes'); return; }
+    setG(prev => ({ ...prev, resources: { wood: prev.resources.wood - c.w, iron: prev.resources.iron - c.i, wheat: prev.resources.wheat - c.h }, levels: { ...prev.levels, [buildingId]: lvl + 1 } }));
+    flash(`✅ ${b.name} melhorado para nível ${lvl + 1}!`);
+    go('village');
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: 700, margin: '0 auto', fontFamily: 'Georgia, serif' }}>
-      <button onClick={() => setScreen('village')} style={{ background: 'transparent', color: C.gold, border: `2px solid ${C.gold}`, padding: '8px 16px', marginBottom: 16, borderRadius: 6, cursor: 'pointer', fontWeight: 700 }}>← Voltar</button>
+    <div style={{ padding: 20, maxWidth: 640, margin: '0 auto' }}>
+      <button onClick={() => go('village')} style={{ background: 'transparent', color: C.darkGold, border: `2px solid ${C.border}`, padding: '8px 16px', marginBottom: 16, borderRadius: 6, cursor: 'pointer', fontWeight: 700 }}>← Voltar à aldeia</button>
 
-      <div style={{ background: `linear-gradient(${C.parch}, ${C.parchD})`, border: `3px solid ${C.border}`, borderRadius: 12, padding: '24px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>{b.icon}</div>
-        <h1 style={{ fontSize: 28, margin: 0, marginBottom: 8, color: C.w1 }}>{b.name}</h1>
-        <p style={{ fontSize: 13, color: C.w2, margin: 0, marginBottom: 16 }}>{b.desc}</p>
+      <div style={{ background: '#fff', border: `3px solid ${C.border}`, borderRadius: 12, padding: 24, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.15)' }}>
+        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'center' }}><Sprite img={b.img} emoji={b.emoji} size={90} /></div>
+        <h1 style={{ fontSize: 26, margin: '0 0 6px', color: C.w1 }}>{b.name}</h1>
+        <p style={{ fontSize: 13, color: C.w2, margin: '0 0 18px' }}>{b.desc}</p>
 
-        <div style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 13 }}>
-          <div style={{ flex: 1 }}><div style={{ color: C.w2 }}>Nível Atual</div><div style={{ fontSize: 24, fontWeight: 700, color: C.gold }}>{lvl}</div></div>
-          <div style={{ fontSize: 28, color: C.border }}>→</div>
-          <div style={{ flex: 1 }}><div style={{ color: C.w2 }}>Próximo</div><div style={{ fontSize: 24, fontWeight: 700, color: canBuild ? C.gold : '#999' }}>{canBuild ? lvl + 1 : 'Max'}</div></div>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 18, alignItems: 'center', justifyContent: 'center' }}>
+          <div><div style={{ fontSize: 12, color: C.w2 }}>Nível atual</div><div style={{ fontSize: 26, fontWeight: 700, color: C.darkGold }}>{lvl}</div></div>
+          <div style={{ fontSize: 26, color: C.border }}>→</div>
+          <div><div style={{ fontSize: 12, color: C.w2 }}>Próximo</div><div style={{ fontSize: 26, fontWeight: 700, color: canBuild ? C.green : '#aaa' }}>{canBuild ? lvl + 1 : 'Máx'}</div></div>
         </div>
 
-        {canBuild && (
+        {canBuild ? (
           <>
-            <div style={{ background: canAfford ? 'rgba(61,106,34,.15)' : 'rgba(138,42,42,.15)', borderRadius: 8, padding: '12px', marginBottom: 16, fontSize: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: C.w1 }}>Custo:</div>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                <div>🪵 {fmt(c.w)}</div>
-                <div>⛏️ {fmt(c.i)}</div>
-                <div>🌾 {fmt(c.h)}</div>
+            <div style={{ background: canAfford ? 'rgba(61,106,34,.12)' : 'rgba(138,42,42,.12)', borderRadius: 8, padding: 12, marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: C.w1, fontSize: 13 }}>Custo da melhoria</div>
+              <div style={{ display: 'flex', gap: 14, justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>
+                <span style={{ color: R.wood >= c.w ? C.green : C.red }}>🪵 {fmt(c.w)}</span>
+                <span style={{ color: R.iron >= c.i ? C.green : C.red }}>⛏️ {fmt(c.i)}</span>
+                <span style={{ color: R.wheat >= c.h ? C.green : C.red }}>🌾 {fmt(c.h)}</span>
               </div>
             </div>
-            <button onClick={upgrade} style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 700, background: canAfford ? C.green : '#999', color: '#fff', border: 'none', borderRadius: 8, cursor: canAfford ? 'pointer' : 'not-allowed' }}>
-              {canAfford ? '🔨 Construir' : '❌ Insuficiente'}
+            <button onClick={upgrade} disabled={!canAfford} style={{ width: '100%', padding: 13, fontSize: 15, fontWeight: 700, background: canAfford ? C.green : '#aaa', color: '#fff', border: 'none', borderRadius: 8, cursor: canAfford ? 'pointer' : 'not-allowed' }}>
+              {canAfford ? '🔨 Construir' : '❌ Recursos insuficientes'}
             </button>
           </>
+        ) : (
+          <div style={{ padding: 12, color: C.w2, fontWeight: 700 }}>✅ Nível máximo atingido</div>
         )}
       </div>
     </div>
